@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PolaroidPostcard } from './Postcards.jsx';
 import {
   getCreatorState,
@@ -12,16 +12,16 @@ const PRIVATE_MAX = 180;
 
 /**
  * v6 Say-thanks popup — three steps in one modal:
- *   1. View the creator's content (carousel of their posts)
- *   2. Send a postcard (public testimonial + private note, both pre-drafted)
+ *   1. View the creator's content (Instagram-style card)
+ *   2. Say thanks (public testimonial + private note, both pre-drafted)
  *   3. Re-collab question (decline / later / favorite)
  *
  * Triggered from the content tile *or* the dashboard row.
  */
 export default function SayThanksPopup({
   campaignId,
-  creator,        // { name, handle, avatarInitial }
-  posts,          // [{ thumbnailUrl, platform, caption, timeAgo, postUrl }]
+  creator,
+  posts,
   brandName,
   onClose,
   onChanged,
@@ -31,7 +31,7 @@ export default function SayThanksPopup({
 
   const [step, setStep] = useState(1);              // 1 | 2 | 3
   const [idx, setIdx] = useState(0);                 // carousel index for step 1
-  const [sending, setSending] = useState(false);     // animation overlay
+  const [sending, setSending] = useState(false);     // overlay-on-modal animation
   const [postcard, setPostcard] = useState(existing.postcard);
   const [reCollab, setReCollabLocal] = useState(existing.reCollab);
   const post = posts[idx] || posts[0] || {};
@@ -80,35 +80,6 @@ export default function SayThanksPopup({
 
   const done = () => onClose();
 
-  // -------- send animation overlay --------
-  if (sending) {
-    return (
-      <div className="stp-overlay" role="dialog" aria-label="Sending postcard">
-        <div className="send-anim-stage">
-          <div className="send-anim__envelope">
-            <div className="send-anim__envelope-back" />
-            <div className="send-anim__card-clip">
-              <div className="send-anim__card">
-                <PolaroidPostcard
-                  thumbnailUrl={post.thumbnailUrl}
-                  platform={post.platform}
-                  brandName={brandName}
-                  message={publicMessage}
-                />
-              </div>
-            </div>
-            <div className="send-anim__envelope-front" />
-            <div className="send-anim__envelope-flap" />
-            <div className="send-anim__envelope-seal" />
-          </div>
-          {Array.from({ length: 10 }).map((_, i) => (
-            <span key={i} className={`send-anim__cp ${i % 2 ? 'send-anim__cp--square' : 'send-anim__cp--round'}`} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="stp-overlay" role="dialog" aria-label={`Say thanks to ${creator.name}`} onClick={onBackdrop}>
       <div className="stp-modal">
@@ -120,42 +91,72 @@ export default function SayThanksPopup({
               <div className="stp-handle">{creator.handle} · {posts.length} post{posts.length === 1 ? '' : 's'}</div>
             </div>
           </div>
-          <Stepper step={step} setStep={setStep} />
-          <button className="stp-close" onClick={onClose} aria-label="Close">×</button>
+          <Stepper step={step} setStep={(n) => !sending && setStep(n)} />
+          <button className="stp-close" onClick={() => !sending && onClose()} aria-label="Close" disabled={sending}>×</button>
         </header>
 
-        {step === 1 && (
-          <StepView
-            posts={posts} idx={idx} setIdx={setIdx} post={post}
-            onNext={() => setStep(2)}
-          />
-        )}
+        <div className="stp-body">
+          {step === 1 && (
+            <StepView
+              posts={posts} idx={idx} setIdx={setIdx} post={post} creator={creator}
+              onNext={() => setStep(2)}
+            />
+          )}
 
-        {step === 2 && (
-          <StepThank
-            firstName={firstName}
-            brandName={brandName}
-            post={post}
-            postcardSent={postcard}
-            publicMessage={publicMessage}
-            setPublicMessage={setPublicMessage}
-            privateMessage={privateMessage}
-            setPrivateMessage={setPrivateMessage}
-            onBack={() => setStep(1)}
-            onSkip={() => setStep(3)}
-            onSend={send}
-          />
-        )}
+          {step === 2 && (
+            <StepThank
+              firstName={firstName}
+              brandName={brandName}
+              post={post}
+              postcardSent={postcard}
+              publicMessage={publicMessage}
+              setPublicMessage={setPublicMessage}
+              privateMessage={privateMessage}
+              setPrivateMessage={setPrivateMessage}
+              onBack={() => setStep(1)}
+              onSkip={() => setStep(3)}
+              onSend={send}
+              sending={sending}
+            />
+          )}
 
-        {step === 3 && (
-          <StepReCollab
-            firstName={firstName}
-            value={reCollab}
-            onPick={pickReCollab}
-            onBack={() => setStep(2)}
-            onDone={done}
-          />
-        )}
+          {step === 3 && (
+            <StepReCollab
+              firstName={firstName}
+              value={reCollab}
+              onPick={pickReCollab}
+              onBack={() => setStep(2)}
+              onDone={done}
+            />
+          )}
+
+          {/* Send animation overlays the modal body — modal stays visible */}
+          {sending && (
+            <div className="stp-send-layer" aria-label="Sending postcard">
+              <div className="send-anim-stage">
+                <div className="send-anim__envelope">
+                  <div className="send-anim__envelope-back" />
+                  <div className="send-anim__card-clip">
+                    <div className="send-anim__card">
+                      <PolaroidPostcard
+                        thumbnailUrl={post.thumbnailUrl}
+                        platform={post.platform}
+                        brandName={brandName}
+                        message={publicMessage}
+                      />
+                    </div>
+                  </div>
+                  <div className="send-anim__envelope-front" />
+                  <div className="send-anim__envelope-flap" />
+                  <div className="send-anim__envelope-seal" />
+                </div>
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <span key={i} className={`send-anim__cp ${i % 2 ? 'send-anim__cp--square' : 'send-anim__cp--round'}`} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -186,32 +187,55 @@ function Stepper({ step, setStep }) {
   );
 }
 
-/* ---------- Step 1: View ---------- */
-function StepView({ posts, idx, setIdx, post, onNext }) {
+/* ---------- Step 1: View — Instagram-style card ---------- */
+function postRatio(platform) {
+  const p = (platform || '').toLowerCase();
+  if (p.includes('reel') || p.includes('stor') || p.includes('tiktok')) return '9 / 16';
+  return '4 / 5';
+}
+function StepView({ posts, idx, setIdx, post, creator, onNext }) {
   const single = posts.length === 1;
   return (
     <div className="stp-step stp-step--view">
+      <div className="stp-step__hd">
+        <h3>Take a look at what {creator.name.split(' ')[0]} made</h3>
+        <p>Browse {posts.length === 1 ? 'the post' : `all ${posts.length} posts`} before you send a thank-you.</p>
+      </div>
       <div className="stp-view-stage">
-        <div
-          className="stp-view-thumb"
-          style={post.thumbnailUrl ? { backgroundImage: `url(${post.thumbnailUrl})` } : undefined}
-        >
-          {post.platform && <span className="stp-view-platform">{post.platform}</span>}
-          {!single && (
-            <div className="stp-view-arrows">
-              <button aria-label="Previous post" onClick={() => setIdx((i) => (i - 1 + posts.length) % posts.length)}>‹</button>
-              <button aria-label="Next post" onClick={() => setIdx((i) => (i + 1) % posts.length)}>›</button>
+        <div className="stp-view-media">
+          <div className="stp-view-card">
+            <div className="stp-view-card__head">
+              <span className="stp-view-card__av">{creator.avatarInitial}</span>
+              <div className="stp-view-card__who">
+                <b>{creator.name}</b>
+                <small>{post.platform || 'Post'}{post.timeAgo ? ` · ${post.timeAgo}` : ''}</small>
+              </div>
+              <span className="stp-view-card__more" aria-hidden="true">···</span>
             </div>
-          )}
-          {!single && (
-            <div className="stp-view-dots">
-              {posts.map((_, i) => <span key={i} className={i === idx ? 'on' : ''} />)}
+            <div
+              className="stp-view-card__img"
+              style={{
+                aspectRatio: postRatio(post.platform),
+                ...(post.thumbnailUrl ? { backgroundImage: `url(${post.thumbnailUrl})` } : null),
+              }}
+            >
+              {!single && (
+                <div className="stp-view-arrows">
+                  <button aria-label="Previous post" onClick={() => setIdx((i) => (i - 1 + posts.length) % posts.length)}>‹</button>
+                  <button aria-label="Next post" onClick={() => setIdx((i) => (i + 1) % posts.length)}>›</button>
+                </div>
+              )}
+              {!single && (
+                <div className="stp-view-dots">
+                  {posts.map((_, i) => <span key={i} className={i === idx ? 'on' : ''} />)}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-        <div className="stp-view-meta">
+        <aside className="stp-view-side">
           <div className="stp-view-count">
-            {post.platform || 'Post'} · {idx + 1} of {posts.length}{post.timeAgo ? ` · ${post.timeAgo}` : ''}
+            <b>{post.platform || 'Post'}</b> · {idx + 1} of {posts.length}{post.timeAgo ? ` · ${post.timeAgo}` : ''}
           </div>
           <p className="stp-view-caption">{post.caption || 'No caption.'}</p>
           {post.postUrl && (
@@ -219,7 +243,7 @@ function StepView({ posts, idx, setIdx, post, onNext }) {
               View original post ↗
             </a>
           )}
-        </div>
+        </aside>
       </div>
       <footer className="stp-foot">
         <span className="stp-foot-spacer" />
@@ -233,11 +257,15 @@ function StepView({ posts, idx, setIdx, post, onNext }) {
 function StepThank({
   firstName, brandName, post,
   postcardSent, publicMessage, setPublicMessage, privateMessage, setPrivateMessage,
-  onBack, onSkip, onSend,
+  onBack, onSkip, onSend, sending,
 }) {
   const viewOnly = !!postcardSent;
   return (
     <div className="stp-step stp-step--thank">
+      <div className="stp-step__hd">
+        <h3>Send a postcard to {firstName}</h3>
+        <p>Two notes in one — a public thank-you that lands on {firstName}'s testimonials, and a private message just for them.</p>
+      </div>
       <div className="stp-thank-row">
         <div className="stp-thank-card">
           <PolaroidPostcard
@@ -269,7 +297,8 @@ function StepThank({
                   maxLength={PUBLIC_MAX}
                   value={publicMessage}
                   onChange={(e) => setPublicMessage(e.target.value)}
-                  placeholder="e.g. Julia was a dream to work with — top-level content."
+                  placeholder={`e.g. ${firstName} was a dream to work with — top-level content.`}
+                  disabled={sending}
                 />
                 <small>{publicMessage.length} / {PUBLIC_MAX}</small>
               </label>
@@ -281,6 +310,7 @@ function StepThank({
                   value={privateMessage}
                   onChange={(e) => setPrivateMessage(e.target.value)}
                   placeholder="The personal thing only she'll see."
+                  disabled={sending}
                 />
                 <small>{privateMessage.length} / {PRIVATE_MAX}</small>
               </label>
@@ -289,15 +319,15 @@ function StepThank({
         </div>
       </div>
       <footer className="stp-foot">
-        <button className="stp-ghost" onClick={onBack}>← Back</button>
+        <button className="stp-ghost" onClick={onBack} disabled={sending}>← Back</button>
         <span className="stp-foot-spacer" />
         {viewOnly ? (
           <button className="stp-primary" onClick={onSkip}>Next →</button>
         ) : (
           <>
-            <button className="stp-link" onClick={onSkip}>Skip</button>
-            <button className="stp-primary" onClick={onSend} disabled={!publicMessage.trim()}>
-              ♥ Send postcard
+            <button className="stp-link" onClick={onSkip} disabled={sending}>Skip</button>
+            <button className="stp-primary" onClick={onSend} disabled={!publicMessage.trim() || sending}>
+              {sending ? 'Sending…' : '♥ Send postcard'}
             </button>
           </>
         )}
@@ -306,18 +336,24 @@ function StepThank({
   );
 }
 
-/* ---------- Step 3: Re-collab ---------- */
+/* ---------- Step 3: Re-collab — friendlier copy + emoji ---------- */
 const RECOLLAB_OPTIONS = [
-  { id: 'decline',  label: 'Not a fit',          desc: "I'd prefer not to work with {first} again." },
-  { id: 'later',    label: 'Yes, periodically',  desc: "Open to working with {first} again — just not the next campaign." },
-  { id: 'favorite', label: 'Favorites',          desc: 'Auto-invite {first} to all my upcoming campaigns.' },
+  { id: 'decline',  emoji: '🙅',
+    label: 'Nah, one and done',
+    desc: "I'd rather not work with {first} again." },
+  { id: 'later',    emoji: '🌱',
+    label: 'Yes — but not next time',
+    desc: "Happy to work with {first} again, just not on the very next campaign." },
+  { id: 'favorite', emoji: '⭐',
+    label: 'Add to my favorites',
+    desc: 'Auto-invite {first} to every campaign I run going forward.' },
 ];
 function StepReCollab({ firstName, value, onPick, onBack, onDone }) {
   return (
     <div className="stp-step stp-step--recollab">
-      <div className="stp-rc-head">
-        <h3>Work with {firstName} again?</h3>
-        <p>Pick one — we'll use this to plan your next campaign.</p>
+      <div className="stp-step__hd">
+        <h3>Would you work with {firstName} again?</h3>
+        <p>Pick the one that feels right — we'll use this to plan your next round.</p>
       </div>
       <div className="stp-rc-options" role="radiogroup">
         {RECOLLAB_OPTIONS.map((opt) => {
@@ -326,17 +362,18 @@ function StepReCollab({ firstName, value, onPick, onBack, onDone }) {
             <button
               key={opt.id}
               type="button"
-              className={`stp-rc-opt ${on ? 'on' : ''} ${opt.id === 'favorite' ? 'stp-rc-opt--fav' : ''}`}
+              className={`stp-rc-opt stp-rc-opt--${opt.id} ${on ? 'on' : ''}`}
               aria-pressed={on}
               role="radio"
               aria-checked={on}
               onClick={() => onPick(opt.id)}
             >
-              <span className="stp-rc-mark">{on ? '✓' : (opt.id === 'favorite' ? '★' : opt.id === 'later' ? '○' : '✕')}</span>
+              <span className="stp-rc-emoji" aria-hidden="true">{opt.emoji}</span>
               <span className="stp-rc-copy">
                 <b>{opt.label}</b>
                 <em>{opt.desc.replace('{first}', firstName)}</em>
               </span>
+              <span className="stp-rc-mark" aria-hidden="true">{on ? '✓' : ''}</span>
             </button>
           );
         })}
