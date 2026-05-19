@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   campaignDetailActive,
@@ -6,133 +6,213 @@ import {
   campaignDetailsModalModal,
   addCreatorsModalModal,
 } from '../data/capturedHtml.js';
-import CreatorHubModal from '../components/CreatorHubModal.jsx';
+import SayThanksPopup from '../components/SayThanksPopup.jsx';
+import WrapUpPanel from '../components/WrapUpPanel.jsx';
 import {
   getCreatorState,
   getActionedCount,
   clearAllActions,
   getRelationshipSummary,
+  isWrapUpVisible,
+  getCampaignState,
+  setCampaignClosed,
 } from '../utils/postcardStorage.js';
 
 const BRAND_NAME = 'Pikora';
 
 export default function CampaignDetailPage() {
-  const [tab, setTab] = useState('Dashboard'); // 'Dashboard' | 'Content'
+  const [tab, setTab] = useState('Dashboard'); // 'Dashboard' | 'Content' | 'Wrapup'
   const [modal, setModal] = useState(null); // null | 'details' | 'addCreators'
-  const [hubTarget, setHubTarget] = useState(null); // { creator, posts } or null
+  const [popupTarget, setPopupTarget] = useState(null); // { creator, posts } or null
   const [decorTick, setDecorTick] = useState(0);
   const ref = useRef(null);
   const navigate = useNavigate();
   const { id: campaignId = '0' } = useParams();
 
-  const html = tab === 'Content' ? campaignContentTab : campaignDetailActive;
+  // ----- Pre-parse the Content tab HTML once to get creators + their posts.
+  // Used by both the dashboard row "Say thanks" entry and the wrap-up tab.
+  const creatorsWithPosts = useMemo(() => parseContentCreators(campaignContentTab), []);
+  const allCreatorHandles = useMemo(() => creatorsWithPosts.map((c) => c.creator.handle), [creatorsWithPosts]);
 
-  // Active-tab class patch.
+  const wrapVisible = isWrapUpVisible(campaignId, allCreatorHandles);
+  const campaignClosed = getCampaignState(campaignId).closed;
+
+  // Determine which captured-HTML block we render (or `null` for the Wrap-up tab).
+  const html = tab === 'Content' ? campaignContentTab
+             : tab === 'Dashboard' ? campaignDetailActive
+             : null;
+
+  // ----- Active-tab class patch for the Dashboard/Content tabs.
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
     root.querySelectorAll('.workflow-dashboard-tab').forEach((b) => {
-      b.classList.toggle('active', b.textContent.trim() === tab);
+      const lbl = b.textContent.trim();
+      const active = (tab === 'Wrapup' && lbl === 'Wrap-up')
+        || lbl === tab
+        || (tab === 'Wrapup' && false); // explicit
+      b.classList.toggle('active', active);
     });
   }, [tab, html]);
 
-  // ----- Decorate Content tiles ("Thanked" badge) and the Dashboard
-  //       creator list (cross-creator relationship status) -----
+  // ----- Inject the Wrap-up tab button into the captured tab bar (and decorate cards/rows).
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
+
+    // Inject "Wrap-up" tab into the captured tab bar.
+    const bar = root.querySelector('.workflow-dashboard-tabs');
+    if (bar && wrapVisible && !bar.querySelector('[data-tab="Wrapup"]')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'workflow-dashboard-tab wu-tab';
+      btn.dataset.tab = 'Wrapup';
+      btn.innerHTML = '★ Wrap-up';
+      bar.appendChild(btn);
+    }
+    // Remove the Wrap-up tab if it's no longer visible (e.g., reset).
+    if (bar && !wrapVisible) {
+      bar.querySelector('[data-tab="Wrapup"]')?.remove();
+    }
+
     if (tab === 'Content') {
       root.querySelectorAll('.content-post-card').forEach((card) => decorateCard(card, campaignId));
-    } else {
+    } else if (tab === 'Dashboard') {
       root.querySelectorAll('.creator-management-table tbody tr').forEach((tr) => decorateDashboardRow(tr, campaignId));
     }
-  }, [tab, html, campaignId, decorTick, hubTarget]);
+  }, [tab, html, campaignId, decorTick, popupTarget, wrapVisible]);
 
   // ----- Click delegation -----
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
     const onClick = (e) => {
-      // Any click on a content-post-card opens the creator hub.
-      const card = e.target.closest('.content-post-card');
-      if (card) {
-        e.preventDefault();
-        e.stopPropagation();
-        openHub(card, root);
+      // "Say thanks" CTA on a content card (new in v6).
+      const sayBtn = e.target.closest('.tile-say-thanks');
+      if (sayBtn) {
+        e.preventDefault(); e.stopPropagation();
+        const card = sayBtn.closest('.content-post-card');
+        if (card) openThanksFromCard(card);
         return;
       }
+      // Click on a content tile body (View) → also opens the popup at step 1.
+      const card = e.target.closest('.content-post-card');
+      if (card) {
+        e.preventDefault(); e.stopPropagation();
+        openThanksFromCard(card);
+        return;
+      }
+      // "Say thanks" CTA on a Dashboard creator row (new in v6).
+      const dashSay = e.target.closest('.dash-say-thanks');
+      if (dashSay) {
+        e.preventDefault(); e.stopPropagation();
+        const handle = dashSay.dataset.handle;
+        openThanksForHandle(handle);
+        return;
+      }
+      // Tab clicks (includes the injected Wrap-up tab).
       const tabBtn = e.target.closest('.workflow-dashboard-tab');
       if (tabBtn) {
         e.preventDefault();
+        const fromData = tabBtn.dataset.tab;
         const label = tabBtn.textContent.trim();
-        if (label === 'Dashboard' || label === 'Content') setTab(label);
+        if (fromData === 'Wrapup' || label === 'Wrap-up') setTab('Wrapup');
+        else if (label === 'Dashboard' || label === 'Content') setTab(label);
         return;
       }
       const headerEdit = e.target.closest('.workflow-header-edit-btn');
-      if (headerEdit) {
-        e.preventDefault();
-        setModal('details');
-        return;
-      }
+      if (headerEdit) { e.preventDefault(); setModal('details'); return; }
       const button = e.target.closest('button');
       if (button && button.textContent.trim() === 'Add Creators') {
-        e.preventDefault();
-        setModal('addCreators');
-        return;
+        e.preventDefault(); setModal('addCreators'); return;
       }
       const back = e.target.closest('.flow-backlink, .workflow-back-link');
-      if (back) {
-        e.preventDefault();
-        navigate('/brand/tonypikora/campaigns');
-      }
+      if (back) { e.preventDefault(); navigate('/brand/tonypikora/campaigns'); }
     };
     root.addEventListener('click', onClick);
     return () => root.removeEventListener('click', onClick);
-  }, [navigate, html, tab]);
+  }, [navigate, html, tab, creatorsWithPosts]);
 
-  // Open the hub for the clicked card's creator, gathering ALL their posts.
-  function openHub(clickedCard, root) {
-    const clicked = extractCard(clickedCard);
+  function openThanksFromCard(card) {
+    const clicked = extractCard(card);
     if (!clicked) return;
-    const allCards = Array.from(root.querySelectorAll('.content-post-card'));
-    const posts = allCards
-      .map(extractCard)
-      .filter((c) => c && c.creator.handle === clicked.creator.handle)
-      .map((c) => c.post);
-    setHubTarget({ creator: clicked.creator, posts });
+    openThanksForHandle(clicked.creator.handle);
+  }
+  function openThanksForHandle(handle) {
+    const found = creatorsWithPosts.find((c) => c.creator.handle === handle);
+    if (!found) return;
+    setPopupTarget({ creator: found.creator, posts: found.posts });
   }
 
-  function onChanged() {
-    setDecorTick((t) => t + 1);
-  }
+  function onChanged() { setDecorTick((t) => t + 1); }
 
   function resetAll() {
     clearAllActions();
     setDecorTick((t) => t + 1);
+    setTab('Dashboard');
   }
 
-  const actionedCount = getActionedCount(); // re-reads on every render
+  function closeCampaignForDemo() {
+    setCampaignClosed(campaignId, true);
+    setDecorTick((t) => t + 1);
+    setTab('Wrapup');
+  }
+  function reopenCampaignForDemo() {
+    setCampaignClosed(campaignId, false);
+    setDecorTick((t) => t + 1);
+    if (tab === 'Wrapup') setTab('Content');
+  }
+
+  const actionedCount = getActionedCount();
 
   return (
     <>
-      <div ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
+      {/* Demo affordance — flip the wrap-up tab on without thanking 50% */}
+      {!campaignClosed && !wrapVisible && (
+        <button type="button" className="demo-close-btn" onClick={closeCampaignForDemo}>
+          ★ Close campaign <span className="demo-close-btn__hint">demo</span>
+        </button>
+      )}
+      {campaignClosed && (
+        <button type="button" className="demo-close-btn demo-close-btn--reopen" onClick={reopenCampaignForDemo}>
+          ↺ Re-open campaign <span className="demo-close-btn__hint">demo</span>
+        </button>
+      )}
+
+      {tab === 'Wrapup' ? (
+        <WrapUpPanel
+          campaignId={campaignId}
+          brandName={BRAND_NAME}
+          creatorsWithPosts={creatorsWithPosts}
+          onOpenThanks={(creator, posts) => setPopupTarget({ creator, posts })}
+          onChanged={onChanged}
+          onBack={(t) => setTab(t === 'Content' ? 'Content' : 'Dashboard')}
+        />
+      ) : (
+        <div ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
+      )}
+
+      {/* Need a ref for tab injection even when Wrap-up is the active panel —
+          render an invisible host to keep injection logic working on tab switch. */}
+      {tab === 'Wrapup' && <div ref={ref} style={{ display: 'none' }} />}
+
       {modal === 'details' && (
         <ModalLayer html={campaignDetailsModalModal} onClose={() => setModal(null)} />
       )}
       {modal === 'addCreators' && (
         <ModalLayer html={addCreatorsModalModal} onClose={() => setModal(null)} />
       )}
-      {hubTarget && (
-        <CreatorHubModal
+      {popupTarget && (
+        <SayThanksPopup
           campaignId={campaignId}
           brandName={BRAND_NAME}
-          creator={hubTarget.creator}
-          posts={hubTarget.posts}
-          onClose={() => setHubTarget(null)}
+          creator={popupTarget.creator}
+          posts={popupTarget.posts}
+          onClose={() => setPopupTarget(null)}
           onChanged={onChanged}
         />
       )}
-      {actionedCount > 0 && !hubTarget && (
+      {actionedCount > 0 && !popupTarget && (
         <button
           type="button"
           className="reset-thanks-fab"
@@ -149,57 +229,81 @@ export default function CampaignDetailPage() {
   );
 }
 
-/* Add a small "Thanked" badge to a card if a postcard was sent to that creator. */
+/* ------- Decorations ------- */
+
 function decorateCard(card, campaignId) {
   if (getComputedStyle(card).position === 'static') {
     card.style.position = 'relative';
   }
   card.querySelector('.thanked-badge')?.remove();
+  card.querySelector('.tile-say-thanks')?.remove();
 
   const info = extractCard(card);
   if (!info) return;
   const st = getCreatorState(campaignId, info.creator.handle);
-  if (!st.postcard) return;
 
-  const date = new Date(st.postcard.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const badge = document.createElement('span');
-  badge.className = 'thanked-badge';
-  badge.innerHTML = `<span class="thanked-badge__check">✓</span> Thanked · ${date}`;
-  badge.setAttribute('aria-label', `Postcard sent to ${info.creator.name} on ${date}`);
-  card.appendChild(badge);
+  // Always add a prominent "Say thanks" CTA under the card (full-width primary).
+  const cta = document.createElement('button');
+  cta.type = 'button';
+  cta.className = 'tile-say-thanks' + (st.postcard ? ' tile-say-thanks--thanked' : '');
+  if (st.postcard) {
+    const date = new Date(st.postcard.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    cta.innerHTML = `<span class="tile-say-thanks__check">✓</span> Thanked · ${date}`;
+  } else {
+    cta.innerHTML = `<span aria-hidden="true">♥</span> Say thanks`;
+  }
+  card.appendChild(cta);
 }
 
-/* Cross-creator surface: show relationship status on each Dashboard row
- * whose creator has had any post-campaign action taken. */
 function decorateDashboardRow(tr, campaignId) {
   tr.querySelector('.relationship-strip')?.remove();
+  tr.querySelector('.dash-say-thanks')?.remove();
+
   const handle = tr.querySelector('.creator-table-person-copy small')?.textContent.trim();
   if (!handle) return;
-  const s = getRelationshipSummary(campaignId, handle);
-  if (!s.any) return;
+  const summary = getRelationshipSummary(campaignId, handle);
+  const status = tr.querySelector('.creator-status-pill')?.textContent.trim() || '';
 
+  // Chip strip in the note column (existing v5 surface, updated for reCollab enum).
   const chips = [];
-  if (s.thanked) chips.push('<span class="rel-chip rel-chip--thanked">♥ Thanked</span>');
-  if (s.paidRights > 0) chips.push(`<span class="rel-chip rel-chip--rights">⊛ Paid rights · ${s.paidRights}</span>`);
-  if (s.shortlisted) chips.push('<span class="rel-chip rel-chip--save">★ Shortlisted</span>');
-  if (s.invitedNext) chips.push('<span class="rel-chip rel-chip--invite">＋ Invited next</span>');
+  if (summary.thanked) chips.push('<span class="rel-chip rel-chip--thanked">♥ Thanked</span>');
+  if (summary.paidRights > 0) chips.push(`<span class="rel-chip rel-chip--rights">⊛ Paid rights · ${summary.paidRights}</span>`);
+  if (summary.reCollab === 'favorite') chips.push('<span class="rel-chip rel-chip--save">★ Favorite</span>');
+  else if (summary.reCollab === 'later') chips.push('<span class="rel-chip rel-chip--invite">＋ Work later</span>');
+  else if (summary.reCollab === 'decline') chips.push('<span class="rel-chip rel-chip--decline">✕ Not a fit</span>');
+  if (chips.length) {
+    const noteCell = tr.querySelector('.creator-management-note-col');
+    const host = noteCell || tr.querySelector('td:nth-child(3)') || tr.lastElementChild;
+    if (host) {
+      const strip = document.createElement('div');
+      strip.className = 'relationship-strip';
+      strip.innerHTML = chips.join('');
+      host.appendChild(strip);
+    }
+  }
 
-  const noteCell = tr.querySelector('.creator-management-note-col');
-  const host = noteCell || tr.querySelector('td:nth-child(3)') || tr.lastElementChild;
-  if (!host) return;
-  const strip = document.createElement('div');
-  strip.className = 'relationship-strip';
-  strip.innerHTML = chips.join('');
-  host.appendChild(strip);
+  // "Say thanks" entry on rows where the creator has POSTED.
+  if (/post/i.test(status)) {
+    const actionCell = tr.querySelector('.creator-management-actions-col')
+      || tr.querySelector('td:last-child');
+    if (actionCell) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'dash-say-thanks' + (summary.thanked ? ' dash-say-thanks--thanked' : '');
+      btn.dataset.handle = handle;
+      btn.innerHTML = summary.thanked
+        ? '<span aria-hidden="true">✓</span> Thanked'
+        : '<span aria-hidden="true">♥</span> Say thanks';
+      actionCell.insertBefore(btn, actionCell.firstChild);
+    }
+  }
 }
 
 function extractCard(card) {
   const nameEl = card.querySelector('.content-post-card__name');
   const handleEl = card.querySelector('.content-post-card__handle');
   if (!nameEl || !handleEl) return null;
-  const avatarText =
-    card.querySelector('.content-post-card__avatar')?.textContent.trim() ||
-    nameEl.textContent.trim().charAt(0);
+  const avatarText = card.querySelector('.content-post-card__avatar')?.textContent.trim() || nameEl.textContent.trim().charAt(0);
   const thumb = card.querySelector('.content-post-card__thumb-image')?.getAttribute('src') || '';
   const badge = card.querySelector('.content-post-card__badge')?.textContent.trim() || '';
   const caption = card.querySelector('.content-post-card__caption')?.textContent.trim() || '';
@@ -213,6 +317,24 @@ function extractCard(card) {
     },
     post: { thumbnailUrl: thumb, platform: badge, caption, timeAgo, postUrl },
   };
+}
+
+/* Parse the Content tab HTML once → group posts by creator handle. */
+function parseContentCreators(htmlString) {
+  if (typeof document === 'undefined') return [];
+  const doc = new DOMParser().parseFromString(htmlString, 'text/html');
+  const cards = Array.from(doc.querySelectorAll('.content-post-card'));
+  const byHandle = new Map();
+  cards.forEach((card) => {
+    const info = extractCard(card);
+    if (!info) return;
+    const h = info.creator.handle;
+    if (!byHandle.has(h)) byHandle.set(h, { creator: info.creator, posts: [], allPostKeys: [] });
+    const bucket = byHandle.get(h);
+    bucket.posts.push(info.post);
+    bucket.allPostKeys.push(info.post.postUrl || `${info.post.platform || 'post'}#${bucket.posts.length - 1}`);
+  });
+  return Array.from(byHandle.values());
 }
 
 function ModalLayer({ html, onClose }) {
