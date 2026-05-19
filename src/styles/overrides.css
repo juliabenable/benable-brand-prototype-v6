@@ -1,0 +1,78 @@
+/* Local overrides + reset. Production CSS loads first; this patches collisions
+   caused by stripping Svelte scoped suffixes. */
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body {
+  font-family: -apple-system, "system-ui", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #fff;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+
+/* ---------------------------------------------------------------- */
+/* Sidebar coming-soon pill: production scopes this rule via svelte- */
+/* hash but a later page-level rule won the cascade after stripping. */
+/* Restore the small sidebar variant explicitly.                     */
+/* ---------------------------------------------------------------- */
+.nav-list .coming-soon-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 0 auto;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(245, 245, 243);
+  color: rgba(107, 114, 128, 0.6);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Ensure nav-label fills remaining space and truncates gracefully. */
+.nav-item .nav-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Brand avatar fallback values — production sets these via component-scoped
+   custom properties; provide defaults so the sidebar Pikora avatar renders. */
+:root {
+  --brand-avatar-size: 28px;
+  --brand-avatar-bg: rgb(245, 245, 243);
+  --brand-avatar-color: #1a1a1a;
+  --brand-avatar-shadow: 0 1px 2px rgba(0,0,0,.04);
+  --brand-avatar-border: 1px solid rgba(26,26,26,.06);
+  --brand-avatar-image-bg: transparent;
+  --brand-avatar-image-fit: cover;
+  --brand-avatar-image-padding: 0;
+  --brand-avatar-fallback-size: 12px;
+}
+
+/* Account menu popover: production uses `position: absolute` inside the
+   sidebar-secondary block. Our React popover renders outside that block, so
+   make it position itself near the brand card. */
+.brand-dashboard .account-menu {
+  position: fixed;
+  bottom: 64px;
+  left: 16px;
+  z-index: 50;
+  width: 220px;
+  max-width: calc(100vw - 32px);
+}
+
+/* React wrapper divs around dangerouslySetInnerHTML break the production
+   layout (the grid expects <aside> and <main> as direct children). Make the
+   wrappers transparent to layout so production CSS works unchanged. */
+.dashboard-body > div[data-shell-slot] {
+  display: contents;
+}
