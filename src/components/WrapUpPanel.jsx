@@ -8,13 +8,16 @@ import {
 } from '../utils/postcardStorage.js';
 
 /**
- * v6 Wrap-up tab (Tony-feedback round 2) — celebratory recap with:
- *   1. Hero stats
- *   2. Thank-you wall (scattered polaroid gallery of sent postcards + nudge for the rest)
- *   3. Creators you'd work with again (tilted pinboard chips for favorites + laters)
- *   4. What you can do with this content — organic rights education tile (green checks)
- *   5. Want to go further? — paid capabilities multi-select (interest-only, not per-post)
- *   6. Monthly proposal CTA
+ * v6 Wrap-up tab (round 4 — full reshape per Tony's brainstorm):
+ *   1. Hero — primary stats (3 hero numbers) + secondary stats (3 small)
+ *      + 3 fan-comment testimonials
+ *   2. Content gallery — collage of all the posts (clickable thumbs)
+ *   3. Catch-up tile — dedicated card listing unthanked creators
+ *   4. Thank-you wall — scattered polaroid postcards
+ *   5. Re-collab pinboard — favorites + laters as tilted chips
+ *   6. Organic rights — redesigned for readability, no green gradient
+ *   7. Paid options — capability-based multi-select (simplified copy)
+ *   8. Primary CTA — contract-aware (launch / proposal), warm gradient
  */
 export default function WrapUpPanel({
   campaignId,
@@ -38,9 +41,20 @@ export default function WrapUpPanel({
   const avgEng = allMeta.length
     ? (allMeta.reduce((s, c) => s + c.meta.engagement, 0) / allMeta.length).toFixed(1)
     : 0;
-  const reachLabel = totalReach >= 1000000
-    ? `${(totalReach / 1e6).toFixed(1)}M`
-    : `${Math.round(totalReach / 1000)}K`;
+
+  // Secondary stats — derived from the deterministic creator meta so
+  // numbers stay consistent across reloads.
+  const totalLikes = Math.round(totalReach * (avgEng / 100) * 0.78);
+  const totalComments = Math.round(totalReach * (avgEng / 100) * 0.14);
+  const totalSaves = Math.round(totalReach * (avgEng / 100) * 0.08);
+
+  const formatN = (n) =>
+    n >= 1000000 ? `${(n / 1e6).toFixed(1)}M` : n >= 1000 ? `${(n / 1000).toFixed(1)}K` : `${n}`;
+
+  const reachLabel = formatN(totalReach);
+  const likesLabel = formatN(totalLikes);
+  const commentsLabel = formatN(totalComments);
+  const savesLabel = formatN(totalSaves);
 
   const thanked = allMeta.filter((c) => !!c.state.postcard);
   const unthanked = allMeta.filter((c) => !c.state.postcard);
@@ -48,9 +62,18 @@ export default function WrapUpPanel({
   const laterCreators = allMeta.filter((c) => c.state.reCollab === 'later');
   const _positiveCount = allMeta.filter((c) => isPositiveReCollab(c.state.reCollab)).length; // eslint-disable-line no-unused-vars
 
+  // Demo-only: pretend "Pikora" has an active Benable contract → CTA
+  // becomes "Launch new campaign". A future "no-contract" variant would
+  // flip this to "Request a proposal". The brainstorm study covers both.
+  const hasContract = true;
+
+  // Flatten all posts for the content gallery — preserves creator order.
+  const allPosts = allMeta.flatMap((c) =>
+    c.posts.map((p) => ({ ...p, _creator: c.creator }))
+  );
+
   return (
     <div className="wu">
-      {/* mini nav */}
       {onBack && (
         <nav className="wu-nav">
           <button type="button" className="wu-nav__back" onClick={onBack}>← Back to campaign</button>
@@ -62,44 +85,32 @@ export default function WrapUpPanel({
         </nav>
       )}
 
-      {/* hero recap */}
-      <section className="wu-hero">
-        <div className="wu-hero__kicker">★ Campaign complete</div>
-        <h2 className="wu-hero__title">Your campaign is done. You crushed it.</h2>
-        <p className="wu-hero__sub">Here's what {creatorCount} creator{creatorCount === 1 ? '' : 's'} delivered.</p>
-        <div className="wu-stats">
-          <div className="wu-stat"><div className="n">{reachLabel}</div><div className="l">Total reach</div></div>
-          <div className="wu-stat"><div className="n">{postCount}</div><div className="l">Pieces of content</div></div>
-          <div className="wu-stat"><div className="n">{avgEng}%</div><div className="l">Avg. engagement</div></div>
-          <div className="wu-stat"><div className="n">{thanked.length}/{creatorCount}</div><div className="l">Thanked</div></div>
-        </div>
-      </section>
-
-      {/* Thank-you wall — scattered polaroid gallery */}
-      <ThankYouWall
-        thanked={thanked}
-        unthanked={unthanked}
-        onOpenThanks={onOpenThanks}
-        brandName={brandName}
+      <Hero
+        creatorCount={creatorCount}
+        thankedCount={thanked.length}
+        reachLabel={reachLabel}
+        postCount={postCount}
+        avgEng={avgEng}
+        likesLabel={likesLabel}
+        commentsLabel={commentsLabel}
+        savesLabel={savesLabel}
       />
 
-      {/* Re-collab pinboard */}
+      <ContentGallery posts={allPosts} />
+
+      {unthanked.length > 0 && (
+        <CatchUpTile unthanked={unthanked} onOpenThanks={onOpenThanks} totalCount={creatorCount} />
+      )}
+
+      <ThankYouWall thanked={thanked} brandName={brandName} />
+
       <ReCollabPinboard favorites={favoriteCreators} laters={laterCreators} />
 
-      {/* Organic rights education */}
       <OrganicRightsTile />
 
-      {/* Paid options (capability-based, interest only) */}
       <PaidOptionsSection />
 
-      {/* Monthly proposal CTA */}
-      <section className="wu-cta">
-        <div>
-          <h3>Want to keep this going?</h3>
-          <p>Get a proposal for a monthly creator program — recurring drops, the creators you loved, no per-campaign setup.</p>
-        </div>
-        <button className="wu-cta__btn">Request a proposal</button>
-      </section>
+      <PrimaryCTA hasContract={hasContract} brandName={brandName} />
 
       <p className="wu-fineprint">
         Best content + creator-rating recaps coming soon. Need rights help in the meantime? <a href="mailto:katie@benable.com">Email Katie</a>.
@@ -109,80 +120,199 @@ export default function WrapUpPanel({
 }
 
 /* =========================================================
-   1. Thank-you wall — scattered polaroids of sent postcards
+   1. Hero — primary + secondary stats + fan comments
    ========================================================= */
-const PIN_ANGLES = ['-4deg', '3deg', '-2deg', '5deg', '-3deg', '2deg', '-5deg', '4deg', '-1deg', '6deg'];
-function ThankYouWall({ thanked, unthanked, onOpenThanks, brandName }) {
-  if (thanked.length === 0 && unthanked.length === 0) return null;
-
+const DEMO_COMMENTS = [
+  { handle: '@elsa.k',      avatar: 'E', text: 'omggg i need this routine — what brand??', likes: 142 },
+  { handle: '@nightcalls',  avatar: 'N', text: "this is the realest content on my fyp today 💯", likes: 89 },
+  { handle: '@junjun.style', avatar: 'J', text: 'wait this looks SO clean. where do i get it?', likes: 67 },
+];
+function Hero({ creatorCount, thankedCount, reachLabel, postCount, avgEng, likesLabel, commentsLabel, savesLabel }) {
   return (
-    <section className="wu-card wu-wall">
-      <div className="wu-card__head">
-        <h3>Your thank-you wall</h3>
-        <p>
-          {thanked.length === 0
-            ? "You haven't sent any postcards yet — kick one off below."
-            : `${thanked.length} postcard${thanked.length === 1 ? '' : 's'} sent${unthanked.length > 0 ? ` · ${unthanked.length} still to go` : ' · all done 🎉'}.`}
-        </p>
+    <section className="wu-hero">
+      <div className="wu-hero__confetti" aria-hidden="true">
+        <span>✦</span><span>·</span><span>✦</span><span>★</span><span>·</span>
+        <span>✦</span><span>·</span><span>★</span>
+      </div>
+      <div className="wu-hero__kicker">★ Campaign complete</div>
+      <h2 className="wu-hero__title">You crushed it.</h2>
+      <p className="wu-hero__sub">
+        Here's everything {creatorCount} creator{creatorCount === 1 ? '' : 's'} made for you.
+      </p>
+
+      <div className="wu-stats wu-stats--hero">
+        <div className="wu-stat"><div className="n">{reachLabel}</div><div className="l">Total reach</div></div>
+        <div className="wu-stat"><div className="n">{postCount}</div><div className="l">Pieces of content</div></div>
+        <div className="wu-stat"><div className="n">{avgEng}%</div><div className="l">Avg. engagement</div></div>
       </div>
 
-      {thanked.length > 0 && (
-        <div className={`wu-wall__pinboard ${thanked.length <= 2 ? 'wu-wall__pinboard--single' : ''}`}>
-          {thanked.map((c, i) => {
-            const post = c.posts[0] || {};
-            return (
-              <div
-                key={c.creator.handle}
-                className="wu-wall__pin"
-                style={{ '--tilt': PIN_ANGLES[i % PIN_ANGLES.length] }}
-                title={`Sent to ${c.creator.name}`}
-              >
-                <div className="wu-wall__tape" />
-                <div className="wu-wall__card">
-                  <PolaroidPostcard
-                    thumbnailUrl={post.thumbnailUrl}
-                    platform={post.platform}
-                    brandName={brandName}
-                    message={c.state.postcard.publicMessage}
-                    signoff={c.state.postcard.signature ? `— ${c.state.postcard.signature}` : undefined}
-                  />
-                </div>
-                <div className="wu-wall__caption">
-                  <span className="wu-wall__caption-label">Sent to</span>
-                  <b>{c.creator.name}</b>
-                  <small>{c.creator.handle}</small>
-                </div>
-              </div>
-            );
-          })}
+      <div className="wu-stats wu-stats--secondary">
+        <div className="wu-stat-sm">
+          <span className="wu-stat-sm__icon" aria-hidden="true">♥</span>
+          <div><b>{likesLabel}</b><small>likes</small></div>
         </div>
-      )}
+        <div className="wu-stat-sm">
+          <span className="wu-stat-sm__icon" aria-hidden="true">💬</span>
+          <div><b>{commentsLabel}</b><small>comments</small></div>
+        </div>
+        <div className="wu-stat-sm">
+          <span className="wu-stat-sm__icon" aria-hidden="true">🔖</span>
+          <div><b>{savesLabel}</b><small>saves &amp; shares</small></div>
+        </div>
+        <div className="wu-stat-sm">
+          <span className="wu-stat-sm__icon" aria-hidden="true">✓</span>
+          <div><b>{thankedCount}/{creatorCount}</b><small>thanked</small></div>
+        </div>
+      </div>
 
-      {unthanked.length > 0 && (
-        <div className="wu-wall__nudge">
-          <span className="wu-wall__nudge-label">Still to thank:</span>
-          <div className="wu-wall__pills">
-            {unthanked.map((c) => (
-              <button
-                key={c.creator.handle}
-                type="button"
-                className="wu-wall__nudge-pill"
-                onClick={() => onOpenThanks(c.creator, c.posts)}
-              >
-                <span className="wu-wall__nudge-av">{c.creator.avatarInitial}</span>
-                {c.creator.name}
-                <span aria-hidden="true">→</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="wu-hero__divider"><span>What people are saying</span></div>
+
+      <div className="wu-comments">
+        {DEMO_COMMENTS.map((c, i) => (
+          <figure key={i} className="wu-comment">
+            <blockquote>"{c.text}"</blockquote>
+            <figcaption>
+              <span className="wu-comment__av">{c.avatar}</span>
+              <span className="wu-comment__handle">{c.handle}</span>
+              <span className="wu-comment__likes">♥ {c.likes}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
     </section>
   );
 }
 
 /* =========================================================
-   2. Re-collab pinboard — tilted creator chips
+   2. Content gallery — collage of all the posts
+   ========================================================= */
+function ContentGallery({ posts }) {
+  if (posts.length === 0) return null;
+  return (
+    <section className="wu-card wu-gallery">
+      <div className="wu-card__head">
+        <h3>The content they made</h3>
+        <p>{posts.length} piece{posts.length === 1 ? '' : 's'} · click any to open the original post.</p>
+      </div>
+      <div className="wu-gallery__grid">
+        {posts.map((post, i) => (
+          <a
+            key={i}
+            className="wu-gallery__tile"
+            href={post.postUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={post.thumbnailUrl ? { backgroundImage: `url(${post.thumbnailUrl})` } : undefined}
+            title={`${post._creator?.name || ''} · ${post.platform || 'Post'}`}
+          >
+            {post.platform && (
+              <span className="wu-gallery__platform">{post.platform}</span>
+            )}
+            <span className="wu-gallery__overlay" aria-hidden="true">
+              <small>{post._creator?.name}</small>
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   3. Catch-up tile — unthanked creators (dedicated card)
+   ========================================================= */
+function CatchUpTile({ unthanked, onOpenThanks, totalCount }) {
+  const pct = Math.round(((totalCount - unthanked.length) / totalCount) * 100);
+  return (
+    <section className="wu-card wu-catchup">
+      <div className="wu-card__head wu-catchup__head">
+        <span className="wu-catchup__kicker">⏰ Almost there</span>
+        <h3>{unthanked.length} creator{unthanked.length === 1 ? '' : 's'} still to thank</h3>
+        <p>Close the loop — send them a postcard before the wrap-up's officially done.</p>
+        <div className="wu-catchup__bar">
+          <div className="wu-catchup__bar-fill" style={{ width: `${pct}%` }} />
+          <span className="wu-catchup__bar-label">{pct}% complete · {totalCount - unthanked.length} of {totalCount}</span>
+        </div>
+      </div>
+      <ul className="wu-catchup__list">
+        {unthanked.map((c) => (
+          <li key={c.creator.handle}>
+            <span className="wu-catchup__av">{c.creator.avatarInitial}</span>
+            <div className="wu-catchup__meta">
+              <b>{c.creator.name}</b>
+              <small>{c.creator.handle} · {c.posts.length} post{c.posts.length === 1 ? '' : 's'} · {c.meta.avgViewsLabel} avg views</small>
+            </div>
+            <button
+              type="button"
+              className="wu-catchup__btn"
+              onClick={() => onOpenThanks(c.creator, c.posts)}
+            >
+              <span aria-hidden="true">♥</span> Say thanks
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/* =========================================================
+   4. Thank-you wall — scattered polaroids of sent postcards
+   ========================================================= */
+const PIN_ANGLES = ['-4deg', '3deg', '-2deg', '5deg', '-3deg', '2deg', '-5deg', '4deg', '-1deg', '6deg'];
+function ThankYouWall({ thanked, brandName }) {
+  if (thanked.length === 0) {
+    return (
+      <section className="wu-card wu-wall wu-wall--empty">
+        <div className="wu-card__head">
+          <h3>Your thank-you wall</h3>
+          <p>Once you start sending postcards, they'll pin up here.</p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="wu-card wu-wall">
+      <div className="wu-card__head">
+        <h3>Your thank-you wall</h3>
+        <p>{thanked.length} postcard{thanked.length === 1 ? '' : 's'} sent · all the warmth you put into this campaign.</p>
+      </div>
+      <div className={`wu-wall__pinboard ${thanked.length <= 2 ? 'wu-wall__pinboard--single' : ''}`}>
+        {thanked.map((c, i) => {
+          const post = c.posts[0] || {};
+          return (
+            <div
+              key={c.creator.handle}
+              className="wu-wall__pin"
+              style={{ '--tilt': PIN_ANGLES[i % PIN_ANGLES.length] }}
+              title={`Sent to ${c.creator.name}`}
+            >
+              <div className="wu-wall__tape" />
+              <div className="wu-wall__card">
+                <PolaroidPostcard
+                  thumbnailUrl={post.thumbnailUrl}
+                  platform={post.platform}
+                  brandName={brandName}
+                  message={c.state.postcard.publicMessage}
+                  signoff={c.state.postcard.signature ? `— ${c.state.postcard.signature}` : undefined}
+                />
+              </div>
+              <div className="wu-wall__caption">
+                <span className="wu-wall__caption-label">Sent to</span>
+                <b>{c.creator.name}</b>
+                <small>{c.creator.handle}</small>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   5. Re-collab pinboard — tilted creator chips
    ========================================================= */
 const TILT_ANGLES = ['-3deg', '2deg', '-2deg', '4deg', '-4deg', '1deg', '-1deg', '3deg', '-5deg', '5deg'];
 function ReCollabPinboard({ favorites, laters }) {
@@ -224,8 +354,8 @@ function ReCollabPinboard({ favorites, laters }) {
       {laters.length > 0 && (
         <div className="wu-faves__group">
           <div className="wu-faves__label">
-            <span className="wu-faves__emoji">🌱</span>
-            <b>Yes — just not next time</b>
+            <span className="wu-faves__emoji">🤝</span>
+            <b>Yes, periodically</b>
             <small>· we'll keep them warm for a future round</small>
           </div>
           <div className="wu-faves__pinboard">
@@ -250,28 +380,28 @@ function ReCollabPinboard({ favorites, laters }) {
 }
 
 /* =========================================================
-   3. Organic rights education — what you ALREADY can do
+   6. Organic rights — clean white card, no gradient green
    ========================================================= */
 const ORGANIC_RIGHTS = [
-  { t: 'Cross-post to your own channels',     d: 'Re-upload to your IG, TikTok, or YouTube Shorts — credit the creator and you\'re set.' },
-  { t: 'Share to stories & highlights',       d: 'Repost any of these to your Stories or save them to a Highlight forever.' },
-  { t: 'Embed on your website & blog',        d: "Use the platform's official embed code anywhere on your owned site." },
-  { t: 'Include in your newsletter',          d: 'Embed a still or link the post — perfect for monthly roundups.' },
-  { t: 'Show in decks, press kits, case studies', d: 'Use the content internally and in unpaid press / investor materials.' },
+  { icon: '↻',  t: 'Cross-post to your own channels',         d: 'Re-upload to your IG, TikTok, or YouTube Shorts — credit the creator and you\'re set.' },
+  { icon: '○',  t: 'Stories & highlights',                     d: 'Repost any of these to your Stories or save them to a Highlight forever.' },
+  { icon: '⌘',  t: 'Embed on your website & blog',             d: "Use the platform's official embed code on any page you own." },
+  { icon: '✉',  t: 'Newsletter & email',                        d: 'Embed a still or link the post — perfect for monthly roundups.' },
+  { icon: '◆',  t: 'Pitch decks, press, case studies',          d: 'Use the content internally and in any unpaid materials.' },
 ];
 function OrganicRightsTile() {
   return (
     <section className="wu-card wu-edu">
-      <div className="wu-card__head">
-        <span className="wu-edu__pill">Already included · free for 30 days</span>
-        <h3>You already have these rights</h3>
-        <p>Everything that came out of this campaign is yours to use organically, for the first 30 days. Here's the cheat sheet.</p>
+      <div className="wu-card__head wu-edu__head">
+        <span className="wu-edu__pill">Included · free</span>
+        <h3>What you can already do with this content</h3>
+        <p>Everything from this campaign is yours to use organically for 30 days — here's the cheat sheet.</p>
       </div>
       <ul className="wu-edu__list">
         {ORGANIC_RIGHTS.map((r) => (
           <li key={r.t}>
-            <span className="wu-edu__check" aria-hidden="true">✓</span>
-            <div>
+            <span className="wu-edu__icon" aria-hidden="true">{r.icon}</span>
+            <div className="wu-edu__copy">
               <b>{r.t}</b>
               <small>{r.d}</small>
             </div>
@@ -279,42 +409,31 @@ function OrganicRightsTile() {
         ))}
       </ul>
       <div className="wu-edu__foot">
-        Need it longer than 30 days? Extend organic from <b>$15/post</b> — or pick a paid option below.
+        Need it longer than 30 days? Extend organic from <b>$15/post</b>, or pick a paid option below.
       </div>
     </section>
   );
 }
 
 /* =========================================================
-   4. Paid options — capability-based multi-select (interest only)
+   7. Paid options — capability multi-select (simplified)
    ========================================================= */
 const PAID_CAPS = [
-  { id: 'rights',    icon: '⚡',
-    title: 'Paid usage rights',
-    desc: 'License this content for your own paid ads on Meta, TikTok, etc. — runs from your handle.',
-    eg: 'Popular for: brand-aligned hero shots.' },
-  { id: 'whitelist', icon: '🤝',
-    title: 'Whitelisting (dark posts)',
-    desc: "Run paid ads from the creator's own handle — feels native, lifts engagement, no public post.",
-    eg: 'Popular for: warm-audience retargeting.' },
-  { id: 'boost',     icon: '🚀',
-    title: 'Boost the original post',
-    desc: 'Pay the platform to amplify the actual organic post — same likes, more reach.',
-    eg: 'Popular for: posts already taking off.' },
-  { id: 'repurpose', icon: '✂️',
-    title: 'Long-term repurpose',
-    desc: 'Extended licensing + raw cuts so you can edit + reuse across your owned channels.',
-    eg: 'Popular for: evergreen product moments.' },
-  { id: 'rebook',    icon: '🔁',
-    title: 'Brief them again',
-    desc: 'Skip discovery — hire one of these creators directly for your next campaign brief.',
-    eg: 'Popular for: a creator who just got it right.' },
+  { id: 'rights',    icon: '⚡', title: 'Paid usage rights',
+    desc: 'License the content for your own paid ads, from your handle.' },
+  { id: 'whitelist', icon: '🤝', title: 'Whitelisting (dark posts)',
+    desc: "Run paid ads from the creator's handle — feels native." },
+  { id: 'boost',     icon: '🚀', title: 'Boost the original post',
+    desc: 'Amplify the actual organic post with paid spend.' },
+  { id: 'repurpose', icon: '✂️', title: 'Long-term repurpose',
+    desc: 'Extended licensing + raw cuts for owned channels.' },
+  { id: 'rebook',    icon: '🔁', title: 'Brief them again',
+    desc: 'Hire one of these creators for your next campaign.' },
 ];
 function PaidOptionsSection() {
   const [selected, setSelected] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const selectedIds = Object.keys(selected).filter((id) => selected[id]);
-
   const toggle = (id) => {
     if (submitted) return;
     setSelected((s) => ({ ...s, [id]: !s[id] }));
@@ -331,7 +450,7 @@ function PaidOptionsSection() {
     <section className="wu-card wu-paid">
       <div className="wu-card__head">
         <h3>Want to go further?</h3>
-        <p>Tick anything you're curious about. We'll come back with options + pricing tailored to your campaign — no commitment.</p>
+        <p>Tick anything you're curious about — we'll come back with options + pricing. No commitment.</p>
       </div>
       <div className="wu-paid__list">
         {PAID_CAPS.map((cap) => {
@@ -348,7 +467,6 @@ function PaidOptionsSection() {
               <div className="wu-paid__copy">
                 <b>{cap.title}</b>
                 <p>{cap.desc}</p>
-                <small>{cap.eg}</small>
               </div>
               <span className={`wu-paid__check ${on ? 'on' : ''}`} aria-hidden="true">{on ? '✓' : ''}</span>
             </label>
@@ -368,6 +486,58 @@ function PaidOptionsSection() {
             Send request →
           </button>
         )}
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================
+   8. Primary CTA — contract-aware, warm gradient
+   ========================================================= */
+function PrimaryCTA({ hasContract, brandName }) {
+  if (hasContract) {
+    return (
+      <section className="wu-promo wu-promo--launch">
+        <div className="wu-promo__bg" aria-hidden="true">
+          <span>★</span><span>✦</span><span>·</span><span>★</span>
+          <span>·</span><span>✦</span><span>★</span><span>·</span>
+        </div>
+        <div className="wu-promo__copy">
+          <div className="wu-promo__kicker">Ready for round two?</div>
+          <h3>Launch your next campaign</h3>
+          <p>Brief in 5 minutes · re-invite your favorites · live in 7 days.<br />Your contract covers it — no extra setup.</p>
+          <div className="wu-promo__metrics">
+            <span>🚀 12 creators ready to brief</span>
+            <span>·</span>
+            <span>⏱ Avg. brief-to-live: 6 days</span>
+          </div>
+        </div>
+        <div className="wu-promo__cta">
+          <button className="wu-promo__btn">Launch new campaign →</button>
+          <span className="wu-promo__sub">or <a href="#">duplicate this campaign</a></span>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="wu-promo wu-promo--proposal">
+      <div className="wu-promo__bg" aria-hidden="true">
+        <span>✦</span><span>·</span><span>★</span><span>·</span>
+        <span>✦</span><span>★</span><span>·</span><span>✦</span>
+      </div>
+      <div className="wu-promo__copy">
+        <div className="wu-promo__kicker">Loved this? Make it recurring.</div>
+        <h3>Get a proposal for {brandName}'s monthly creator program</h3>
+        <p>The creators you loved, fresh content every month — no per-campaign setup, predictable spend.</p>
+        <div className="wu-promo__metrics">
+          <span>📈 Brands save ~40% vs ad hoc</span>
+          <span>·</span>
+          <span>📞 Proposal in 48h</span>
+        </div>
+      </div>
+      <div className="wu-promo__cta">
+        <button className="wu-promo__btn">Request a proposal →</button>
+        <span className="wu-promo__sub">or <a href="mailto:katie@benable.com">email Katie</a></span>
       </div>
     </section>
   );
