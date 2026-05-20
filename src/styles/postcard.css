@@ -1617,8 +1617,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px 30px 26px;
+  padding: 24px 30px 30px;
   min-height: 0;
+  /* Stops the card from bleeding into the step header (or footer) when
+     a long caption tries to push the side panel taller than the available
+     space — the body scrolls inside the card instead. */
+  overflow: hidden;
 }
 .stp-view-card {
   display: flex;
@@ -1628,13 +1632,20 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   overflow: hidden;
   max-width: 100%;
+  /* Card height matches the stage but never exceeds 540px. The media
+     pane uses height:100% to inherit, so the image stays at its native
+     ratio; the side panel inherits the same height and scrolls its
+     caption body internally when copy is long. */
+  height: 100%;
+  max-height: 540px;
   align-self: center;
 }
 /* Media pane — aspect-ratio is set inline based on the platform (9:16 for
    reels/stories/tiktok, 4:5 otherwise), so the container exactly matches
-   the image and there's no letterboxing OR cropping. */
+   the image and there's no letterboxing OR cropping. The pane fills the
+   card's height; the card is bounded by the stage so it never overflows. */
 .stp-view-card__media {
-  height: min(540px, calc(92vh - 290px));
+  height: 100%;
   background: #000;
   position: relative;
   flex-shrink: 0;
@@ -1677,14 +1688,17 @@
 .stp-view-dots span.on { background: #fff; }
 
 /* Side pane — fixed width, sits flush to the media pane with a shared
-   border. Creator header on top, caption middle, link at the bottom. */
+   border. Creator header on top, caption middle (scrollable internally
+   when the caption is long), link at the bottom. */
 .stp-view-card__side {
   width: 340px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   border-left: 1px solid #ececea;
   background: #fff;
   min-width: 0;
+  min-height: 0;
 }
 .stp-view-card__side-head {
   display: flex;
