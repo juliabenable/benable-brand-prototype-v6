@@ -102,12 +102,13 @@ export default function CampaignDetailPage() {
         openThanksFromCard(card);
         return;
       }
-      // "Say thanks" CTA on a Dashboard creator row (new in v6).
-      const dashSay = e.target.closest('.dash-say-thanks');
-      if (dashSay) {
+      // Captured "View" button (renamed from "Preview") on a Dashboard row.
+      const viewLink = e.target.closest('.preview-action-btn');
+      if (viewLink) {
         e.preventDefault(); e.stopPropagation();
-        const handle = dashSay.dataset.handle;
-        openThanksForHandle(handle);
+        const tr = viewLink.closest('tr');
+        const handle = tr?.querySelector('.creator-table-person-copy small')?.textContent.trim();
+        if (handle) openThanksForHandle(handle);
         return;
       }
       // Tab clicks (includes the injected Wrap-up tab).
@@ -257,14 +258,27 @@ function decorateCard(card, campaignId) {
 
 function decorateDashboardRow(tr, campaignId) {
   tr.querySelector('.relationship-strip')?.remove();
+  // Clean up the duplicate injected button from earlier v6 iterations.
   tr.querySelector('.dash-say-thanks')?.remove();
 
   const handle = tr.querySelector('.creator-table-person-copy small')?.textContent.trim();
   if (!handle) return;
   const summary = getRelationshipSummary(campaignId, handle);
-  const status = tr.querySelector('.creator-status-pill')?.textContent.trim() || '';
 
-  // Chip strip in the note column (existing v5 surface, updated for reCollab enum).
+  // Rename the captured "Preview" link → "View", and (when relevant) prepend
+  // the "Say thanks" hint so the brand sees the next action right on the row.
+  const viewLink = tr.querySelector('.preview-action-btn');
+  if (viewLink) {
+    if (summary.thanked) {
+      viewLink.innerHTML = '<span aria-hidden="true" class="dash-thanked-dot">✓</span> View · thanked';
+      viewLink.classList.add('preview-action-btn--thanked');
+    } else {
+      viewLink.innerHTML = '<span aria-hidden="true">♥</span> View · say thanks';
+      viewLink.classList.remove('preview-action-btn--thanked');
+    }
+  }
+
+  // Chip strip in the note column.
   const chips = [];
   if (summary.thanked) chips.push('<span class="rel-chip rel-chip--thanked">♥ Thanked</span>');
   if (summary.paidRights > 0) chips.push(`<span class="rel-chip rel-chip--rights">⊛ Paid rights · ${summary.paidRights}</span>`);
@@ -279,22 +293,6 @@ function decorateDashboardRow(tr, campaignId) {
       strip.className = 'relationship-strip';
       strip.innerHTML = chips.join('');
       host.appendChild(strip);
-    }
-  }
-
-  // "Say thanks" entry on rows where the creator has POSTED.
-  if (/post/i.test(status)) {
-    const actionCell = tr.querySelector('.creator-management-actions-col')
-      || tr.querySelector('td:last-child');
-    if (actionCell) {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'dash-say-thanks' + (summary.thanked ? ' dash-say-thanks--thanked' : '');
-      btn.dataset.handle = handle;
-      btn.innerHTML = summary.thanked
-        ? '<span aria-hidden="true">✓</span> Thanked'
-        : '<span aria-hidden="true">♥</span> Say thanks';
-      actionCell.insertBefore(btn, actionCell.firstChild);
     }
   }
 }

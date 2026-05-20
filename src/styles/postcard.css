@@ -1256,6 +1256,63 @@
 .dash-say-thanks--thanked:hover { background: #fbe6df; box-shadow: none; }
 
 /* ============================================================
+   v6 — Restyle the captured "View" action button (was "Preview",
+   was purple-outlined). Now a clean dark pill; thanked variant
+   uses the warm-rose family.
+   ============================================================ */
+.preview-action-btn,
+.preview-action-btn:link,
+.preview-action-btn:visited,
+.preview-action-btn:hover,
+.preview-action-btn:active {
+  background: #1a1a1a !important;
+  color: #fff !important;
+  border: 0 !important;
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px !important;
+  border-radius: 999px !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap;
+  transition: background .14s ease, transform .08s ease, box-shadow .14s ease;
+}
+.preview-action-btn:hover {
+  background: #2a2a2a !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+}
+.preview-action-btn > span[aria-hidden="true"] { color: #ff7aa3; }
+.preview-action-btn--thanked,
+.preview-action-btn--thanked:link,
+.preview-action-btn--thanked:visited,
+.preview-action-btn--thanked:hover,
+.preview-action-btn--thanked:active {
+  background: #fdf2ee !important;
+  color: #b04a4a !important;
+  border: 1px solid #f4d6c6 !important;
+}
+.preview-action-btn--thanked .dash-thanked-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #c47a6a;
+  color: #fff !important;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+.preview-action-btn--thanked:hover {
+  background: #fbe6df !important;
+  box-shadow: 0 4px 10px rgba(196, 122, 106, 0.14);
+}
+
+/* ============================================================
    v6 — Demo "Close campaign" + "Re-open" floating top-right
    ============================================================ */
 .demo-close-btn {
