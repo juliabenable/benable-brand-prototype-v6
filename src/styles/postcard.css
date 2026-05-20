@@ -2090,15 +2090,15 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Hero recap — stats only (comments live in their own section now).
-   Cleaner: gentler gradient, no confetti accents, more elegant. */
+/* Hero — campaign-brief aesthetic. White card, soft border, subtle
+   shadow (via .wu-brief-card). The hero text sits on top of the card. */
 .wu-hero {
-  position: relative;
-  background: linear-gradient(180deg, #fdfbf6 0%, #fff 100%);
-  border-radius: 18px;
-  padding: 44px 36px 36px;
-  border: 1px solid #ebebeb;
   text-align: center;
+  padding: 36px 36px 28px;
+  gap: 20px;
+}
+.wu-hero .wu-brief-label {
+  margin-bottom: 0;
 }
 .wu-hero__kicker {
   position: relative;
@@ -2111,38 +2111,37 @@
   margin-bottom: 10px;
 }
 .wu-hero__title {
-  position: relative;
-  margin: 0 0 8px;
-  font-size: 34px;
-  font-weight: 800;
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
   color: #1a1a1a;
   letter-spacing: -0.02em;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 .wu-hero__sub {
-  position: relative;
-  margin: 0 0 28px;
+  margin: 0 auto;
   font-size: 15px;
-  color: #5a5a5a;
+  color: #717171;
+  max-width: 540px;
 }
 
 /* Hero stats — three big numbers up top */
 .wu-stats--hero {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  position: relative;
+  gap: 12px;
+  margin-top: 4px;
 }
 .wu-stat {
-  background: #fff;
-  border-radius: 16px;
+  background: #fafaf8;
+  border-radius: 14px;
   padding: 20px 14px;
   text-align: center;
-  border: 1px solid #f0e8da;
+  border: 1px solid rgba(235, 235, 235, 0.8);
 }
 .wu-stat .n {
-  font-size: 32px;
-  font-weight: 800;
+  font-size: 30px;
+  font-weight: 700;
   color: #1a1a1a;
   letter-spacing: -0.025em;
   line-height: 1.1;
@@ -2158,13 +2157,12 @@
 .wu-stats--secondary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-top: 14px;
-  position: relative;
+  gap: 8px;
 }
 .wu-stat-sm {
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 12px;
+  background: #fafaf8;
+  border: 1px solid rgba(235, 235, 235, 0.8);
+  border-radius: 10px;
   padding: 10px 14px;
   display: flex;
   align-items: center;
@@ -2319,7 +2317,9 @@
   .wu-comments-thread__thumb { width: 72px; aspect-ratio: 9/16; max-height: none; flex-shrink: 0; }
 }
 
-/* Card shell (reused across wrap-up sections) */
+/* Card shell (reused across wrap-up sections) — legacy. The new
+   .wu-brief-card class below matches the campaign-brief .draft-card
+   aesthetic exactly and is what the live wrap-up uses. */
 .wu-card {
   background: #fff;
   border: 1px solid #ebebeb;
@@ -2339,6 +2339,93 @@
   font-size: 14px;
   color: #717171;
   line-height: 1.5;
+}
+
+/* ============================================================
+   Brief-aesthetic card — mirrors production's .draft-card.
+   White card, soft 0.72-opacity border, 20px radius, 24px padding,
+   subtle 1-3px shadow. Used for every section in the wrap-up.
+   ============================================================ */
+.wu-brief-card {
+  background: #fff;
+  border: 1px solid rgba(235, 235, 235, 0.72);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+/* "Next step" variant — soft lavender wash, no shadow, matches the
+   campaign brief's .draft-card--next CTA card. */
+.wu-brief-card--next {
+  background: linear-gradient(135deg, #f9f7ff 0%, #f0edff 100%);
+  border-color: rgba(122, 92, 250, 0.15);
+  box-shadow: none;
+}
+
+/* Section header — icon box + UPPERCASE title (mirrors .draft-card-heading) */
+.wu-brief-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wu-brief-head__heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.wu-brief-head__icon {
+  width: 28px; height: 28px;
+  border-radius: 10px;
+  background: #f3efff;
+  color: #7c64ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 14px;
+  font-weight: 700;
+}
+.wu-brief-head--green .wu-brief-head__icon {
+  background: rgba(16, 185, 129, 0.10);
+  color: #10b981;
+}
+.wu-brief-head--rose .wu-brief-head__icon {
+  background: #fdf2ee;
+  color: #c47a6a;
+}
+.wu-brief-head--gold .wu-brief-head__icon {
+  background: #fff4dc;
+  color: #c89422;
+}
+.wu-brief-head__heading h3 {
+  margin: 0;
+  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+.wu-brief-head__sub {
+  margin: 4px 0 0;
+  color: #717171;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Small uppercase label (mirrors .draft-title-label) — used as a kicker
+   above page-level titles like "CAMPAIGN COMPLETE" in the hero. */
+.wu-brief-label {
+  display: block;
+  color: #b1aca6;
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 /* Finish your thank-yous list */
@@ -2745,85 +2832,33 @@
 .wu-catchup__btn > span { color: #ff7aa3; margin-right: 4px; }
 
 /* ============================================================
-   Primary promo CTA — toned-down, brand-portal-aligned.
-   White card with a subtle warm-cream gradient + a peach accent
-   strip on the left. Black primary button. Same energy as the
-   rest of the wrap-up cards.
+   Primary promo CTA — sits in the .wu-brief-card--next variant
+   (lavender gradient + soft purple border), with a clean body row
+   below the brief header.
    ============================================================ */
-.wu-promo {
-  position: relative;
-  border-radius: 18px;
-  padding: 32px 36px 32px 32px;
+.wu-promo__body {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 28px;
+  gap: 24px;
   flex-wrap: wrap;
-  overflow: hidden;
-  color: #1a1a1a;
-  background: linear-gradient(180deg, #fff 0%, #fdfbf6 100%);
-  border: 1px solid #ebebeb;
-}
-.wu-promo--launch {
-  border-left: 4px solid #ff7a8c;
-}
-.wu-promo--proposal {
-  border-left: 4px solid #7a5cfa;
-}
-.wu-promo__accent {
-  position: absolute;
-  top: 22px; right: 28px;
-  font-size: 28px;
-  opacity: 0.45;
-  pointer-events: none;
-}
-.wu-promo__copy {
-  position: relative;
-  flex: 1;
-  min-width: 260px;
-  max-width: 640px;
-}
-.wu-promo__kicker {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #888;
-  margin-bottom: 8px;
-}
-.wu-promo--launch .wu-promo__kicker { color: #c47a6a; }
-.wu-promo--proposal .wu-promo__kicker { color: #6a4af0; }
-.wu-promo h3 {
-  margin: 0 0 8px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a1a1a;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
-.wu-promo p {
-  margin: 0 0 14px;
-  font-size: 14px;
-  color: #5a5a5a;
-  line-height: 1.55;
+  margin-top: 4px;
 }
 .wu-promo__metrics {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  font-size: 12.5px;
-  color: #717171;
+  font-size: 13px;
+  color: #6a5a8a;
   font-weight: 500;
 }
-.wu-promo__metrics > span:nth-child(even) { color: #c4c4c4; }
+.wu-promo__metrics > span:nth-child(even) { color: rgba(122, 92, 250, 0.4); }
 .wu-promo__cta {
-  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  align-items: flex-start;
+  gap: 6px;
+  align-items: flex-end;
 }
 .wu-promo__btn {
   background: #1a1a1a;
@@ -2845,7 +2880,7 @@
 }
 .wu-promo__sub {
   font-size: 12.5px;
-  color: #888;
+  color: #8a7eb0;
 }
 .wu-promo__sub a {
   color: #1a1a1a;

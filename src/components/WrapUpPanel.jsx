@@ -116,12 +116,28 @@ export default function WrapUpPanel({
 }
 
 /* =========================================================
+   Shared section header — matches the campaign-brief aesthetic:
+   a 28px purple icon box + UPPERCASE 14px letter-spaced title.
+   ========================================================= */
+function BriefHead({ icon, title, sub, accent = 'purple' }) {
+  return (
+    <header className={`wu-brief-head wu-brief-head--${accent}`}>
+      <div className="wu-brief-head__heading">
+        <span className="wu-brief-head__icon" aria-hidden="true">{icon}</span>
+        <h3>{title}</h3>
+      </div>
+      {sub && <p className="wu-brief-head__sub">{sub}</p>}
+    </header>
+  );
+}
+
+/* =========================================================
    1. Hero — stats only, cleaner layout
    ========================================================= */
 function Hero({ creatorCount, thankedCount, reachLabel, postCount, avgEng, likesLabel, commentsLabel, savesLabel }) {
   return (
-    <section className="wu-hero">
-      <div className="wu-hero__kicker">★ Campaign complete</div>
+    <section className="wu-hero wu-brief-card">
+      <span className="wu-brief-label">Campaign complete</span>
       <h2 className="wu-hero__title">You crushed it.</h2>
       <p className="wu-hero__sub">
         Here's everything {creatorCount} creator{creatorCount === 1 ? '' : 's'} made for you.
@@ -168,11 +184,9 @@ const DEMO_COMMENTS = [
 function CommentsSection({ posts }) {
   const sourcePost = posts[0] || {};
   return (
-    <section className="wu-card wu-comments-card">
-      <div className="wu-card__head">
-        <h3>What people are saying</h3>
-        <p>Top comments pulled from the campaign's posts.</p>
-      </div>
+    <section className="wu-card wu-brief-card wu-comments-card">
+      <BriefHead icon="💬" title="What people are saying" sub="Top comments pulled from the campaign's posts." />
+
       <div className="wu-comments-thread">
         <div className="wu-comments-thread__src">
           <div
@@ -217,11 +231,9 @@ function CommentsSection({ posts }) {
 function ContentGallery({ posts }) {
   if (posts.length === 0) return null;
   return (
-    <section className="wu-card wu-gallery">
-      <div className="wu-card__head">
-        <h3>The content they made</h3>
-        <p>{posts.length} piece{posts.length === 1 ? '' : 's'} from the campaign · click to open.</p>
-      </div>
+    <section className="wu-card wu-brief-card wu-gallery">
+      <BriefHead icon="▦" title="The content they made" sub={`${posts.length} piece${posts.length === 1 ? '' : 's'} from the campaign · click to open.`} />
+
       <div className="wu-gallery__cards">
         {posts.map((post, i) => {
           const views = post._meta?.avgViews || 0;
@@ -267,16 +279,13 @@ function ContentGallery({ posts }) {
 function CatchUpTile({ unthanked, onOpenThanks, totalCount }) {
   const pct = Math.round(((totalCount - unthanked.length) / totalCount) * 100);
   return (
-    <section className="wu-card wu-catchup">
-      <div className="wu-card__head wu-catchup__head">
-        <span className="wu-catchup__kicker">Still to thank</span>
-        <h3>{unthanked.length} creator{unthanked.length === 1 ? '' : 's'} haven't heard from you</h3>
-        <p>Close the loop before the wrap-up is officially done.</p>
-        <div className="wu-catchup__bar">
-          <div className="wu-catchup__bar-fill" style={{ width: `${pct}%` }} />
-        </div>
-        <span className="wu-catchup__bar-label">{pct}% complete · {totalCount - unthanked.length} of {totalCount}</span>
+    <section className="wu-card wu-brief-card wu-catchup">
+      <BriefHead icon="◷" title="Still to thank" sub={`${unthanked.length} creator${unthanked.length === 1 ? '' : 's'} haven't heard from you yet. Close the loop before wrap-up is officially done.`} />
+      <div className="wu-catchup__bar">
+        <div className="wu-catchup__bar-fill" style={{ width: `${pct}%` }} />
       </div>
+      <span className="wu-catchup__bar-label">{pct}% complete · {totalCount - unthanked.length} of {totalCount}</span>
+
       <ul className="wu-catchup__list">
         {unthanked.map((c) => (
           <li key={c.creator.handle}>
@@ -306,21 +315,15 @@ const PIN_ANGLES = ['-4deg', '3deg', '-2deg', '5deg', '-3deg', '2deg', '-5deg', 
 function ThankYouWall({ thanked, brandName }) {
   if (thanked.length === 0) {
     return (
-      <section className="wu-card wu-wall wu-wall--empty">
-        <div className="wu-card__head">
-          <h3>Your thank-you wall</h3>
-          <p>Once you start sending postcards, they'll pin up here.</p>
-        </div>
+      <section className="wu-card wu-brief-card wu-wall wu-wall--empty">
+        <BriefHead icon="♥" title="Your thank-you wall" sub="Once you start sending postcards, they'll pin up here." />
       </section>
     );
   }
 
   return (
-    <section className="wu-card wu-wall">
-      <div className="wu-card__head">
-        <h3>Your thank-you wall</h3>
-        <p>{thanked.length} postcard{thanked.length === 1 ? '' : 's'} sent · all the warmth you put into this campaign.</p>
-      </div>
+    <section className="wu-card wu-brief-card wu-wall">
+      <BriefHead icon="♥" title="Your thank-you wall" sub={`${thanked.length} postcard${thanked.length === 1 ? '' : 's'} sent · all the warmth you put into this campaign.`} />
       <div className={`wu-wall__pinboard ${thanked.length <= 2 ? 'wu-wall__pinboard--single' : ''}`}>
         {thanked.map((c, i) => {
           const post = c.posts[0] || {};
@@ -362,11 +365,8 @@ function ReCollabPinboard({ favorites, laters }) {
   if (favorites.length === 0 && laters.length === 0) return null;
 
   return (
-    <section className="wu-card wu-faves">
-      <div className="wu-card__head">
-        <h3>Creators you'd work with again</h3>
-        <p>Favorites get an auto-invite on every future campaign. The "later" crew stays on standby.</p>
-      </div>
+    <section className="wu-card wu-brief-card wu-faves">
+      <BriefHead icon="↻" title="Creators you'd work with again" sub='Favorites get an auto-invite on every future campaign. The "later" crew stays on standby.' />
 
       {favorites.length > 0 && (
         <div className="wu-faves__group">
@@ -434,12 +434,8 @@ const ORGANIC_RIGHTS = [
 ];
 function OrganicRightsTile() {
   return (
-    <section className="wu-card wu-edu">
-      <div className="wu-card__head wu-edu__head">
-        <span className="wu-edu__pill">Included · free</span>
-        <h3>What you can already do with this content</h3>
-        <p>Everything from this campaign is yours to use organically for 30 days. Here's the cheat sheet.</p>
-      </div>
+    <section className="wu-card wu-brief-card wu-edu">
+      <BriefHead icon="✓" title="What you can already do" sub="Everything from this campaign is yours to use organically for 30 days — free, included with the brief." accent="green" />
       <ul className="wu-edu__list">
         {ORGANIC_RIGHTS.map((r, i) => (
           <li key={r.t}>
@@ -490,11 +486,8 @@ function PaidOptionsSection() {
   };
 
   return (
-    <section className="wu-card wu-paid">
-      <div className="wu-card__head">
-        <h3>Want to go further?</h3>
-        <p>Tap anything you're curious about — we'll come back with options + pricing. No commitment.</p>
-      </div>
+    <section className="wu-card wu-brief-card wu-paid">
+      <BriefHead icon="✦" title="Want to go further?" sub="Tap anything you're curious about — we'll come back with options + pricing. No commitment." />
       <div className="wu-paid__grid">
         {PAID_CAPS.map((cap) => {
           const on = !!selected[cap.id];
@@ -539,41 +532,35 @@ function PaidOptionsSection() {
 function PrimaryCTA({ hasContract, brandName }) {
   if (hasContract) {
     return (
-      <section className="wu-promo wu-promo--launch">
-        <div className="wu-promo__accent" aria-hidden="true">🚀</div>
-        <div className="wu-promo__copy">
-          <div className="wu-promo__kicker">Ready for round two?</div>
-          <h3>Launch your next campaign</h3>
-          <p>Brief in 5 minutes · re-invite your favorites · live in 7 days. Your contract covers it.</p>
+      <section className="wu-card wu-brief-card wu-brief-card--next wu-promo">
+        <BriefHead icon="→" title="Ready for round two?" sub="Brief in 5 minutes · re-invite your favorites · live in 7 days. Your contract covers it." />
+        <div className="wu-promo__body">
           <div className="wu-promo__metrics">
             <span>12 creators ready</span>
             <span aria-hidden="true">·</span>
             <span>Avg. brief-to-live: 6 days</span>
           </div>
-        </div>
-        <div className="wu-promo__cta">
-          <button className="wu-promo__btn">Launch new campaign →</button>
-          <span className="wu-promo__sub">or <a href="#">duplicate this campaign</a></span>
+          <div className="wu-promo__cta">
+            <button className="wu-promo__btn">Launch new campaign →</button>
+            <span className="wu-promo__sub">or <a href="#">duplicate this campaign</a></span>
+          </div>
         </div>
       </section>
     );
   }
   return (
-    <section className="wu-promo wu-promo--proposal">
-      <div className="wu-promo__accent" aria-hidden="true">✦</div>
-      <div className="wu-promo__copy">
-        <div className="wu-promo__kicker">Loved this? Make it recurring.</div>
-        <h3>Get a proposal for {brandName}'s monthly creator program</h3>
-        <p>The creators you loved, fresh content every month — no per-campaign setup, predictable spend.</p>
+    <section className="wu-card wu-brief-card wu-brief-card--next wu-promo">
+      <BriefHead icon="✦" title="Loved this? Make it recurring." sub={`The creators you loved, fresh content every month — no per-campaign setup, predictable spend.`} />
+      <div className="wu-promo__body">
         <div className="wu-promo__metrics">
           <span>Brands save ~40% vs ad hoc</span>
           <span aria-hidden="true">·</span>
           <span>Proposal in 48h</span>
         </div>
-      </div>
-      <div className="wu-promo__cta">
-        <button className="wu-promo__btn">Request a proposal →</button>
-        <span className="wu-promo__sub">or <a href="mailto:katie@benable.com">email Katie</a></span>
+        <div className="wu-promo__cta">
+          <button className="wu-promo__btn">Get a proposal for {brandName} →</button>
+          <span className="wu-promo__sub">or <a href="mailto:katie@benable.com">email Katie</a></span>
+        </div>
       </div>
     </section>
   );
