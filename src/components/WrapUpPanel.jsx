@@ -8,16 +8,16 @@ import {
 } from '../utils/postcardStorage.js';
 
 /**
- * v6 Wrap-up tab (round 4 — full reshape per Tony's brainstorm):
- *   1. Hero — primary stats (3 hero numbers) + secondary stats (3 small)
- *      + 3 fan-comment testimonials
- *   2. Content gallery — collage of all the posts (clickable thumbs)
- *   3. Catch-up tile — dedicated card listing unthanked creators
- *   4. Thank-you wall — scattered polaroid postcards
- *   5. Re-collab pinboard — favorites + laters as tilted chips
- *   6. Organic rights — redesigned for readability, no green gradient
- *   7. Paid options — capability-based multi-select (simplified copy)
- *   8. Primary CTA — contract-aware (launch / proposal), warm gradient
+ * v6 Wrap-up tab (round 5 — per Tony's section-by-section iteration):
+ *   1. Hero — stats only (comments moved out), cleaner layout
+ *   2. Comments — separate section, IG/TT-style comment thread
+ *   3. Content gallery — social-feed post cards (not uniform grid)
+ *   4. Catch-up — neutral white card, quieter
+ *   5. Thank-you wall — unchanged
+ *   6. Re-collab pinboard — unchanged
+ *   7. Organic rights — iteration on B, single column for readability
+ *   8. Paid options — 2-col grid (variant C from the study)
+ *   9. Primary CTA — toned-down, brand-portal-aligned warm card
  */
 export default function WrapUpPanel({
   campaignId,
@@ -42,8 +42,6 @@ export default function WrapUpPanel({
     ? (allMeta.reduce((s, c) => s + c.meta.engagement, 0) / allMeta.length).toFixed(1)
     : 0;
 
-  // Secondary stats — derived from the deterministic creator meta so
-  // numbers stay consistent across reloads.
   const totalLikes = Math.round(totalReach * (avgEng / 100) * 0.78);
   const totalComments = Math.round(totalReach * (avgEng / 100) * 0.14);
   const totalSaves = Math.round(totalReach * (avgEng / 100) * 0.08);
@@ -62,14 +60,10 @@ export default function WrapUpPanel({
   const laterCreators = allMeta.filter((c) => c.state.reCollab === 'later');
   const _positiveCount = allMeta.filter((c) => isPositiveReCollab(c.state.reCollab)).length; // eslint-disable-line no-unused-vars
 
-  // Demo-only: pretend "Pikora" has an active Benable contract → CTA
-  // becomes "Launch new campaign". A future "no-contract" variant would
-  // flip this to "Request a proposal". The brainstorm study covers both.
   const hasContract = true;
 
-  // Flatten all posts for the content gallery — preserves creator order.
   const allPosts = allMeta.flatMap((c) =>
-    c.posts.map((p) => ({ ...p, _creator: c.creator }))
+    c.posts.map((p) => ({ ...p, _creator: c.creator, _meta: c.meta }))
   );
 
   return (
@@ -96,6 +90,8 @@ export default function WrapUpPanel({
         savesLabel={savesLabel}
       />
 
+      <CommentsSection posts={allPosts} />
+
       <ContentGallery posts={allPosts} />
 
       {unthanked.length > 0 && (
@@ -120,20 +116,11 @@ export default function WrapUpPanel({
 }
 
 /* =========================================================
-   1. Hero — primary + secondary stats + fan comments
+   1. Hero — stats only, cleaner layout
    ========================================================= */
-const DEMO_COMMENTS = [
-  { handle: '@elsa.k',      avatar: 'E', text: 'omggg i need this routine — what brand??', likes: 142 },
-  { handle: '@nightcalls',  avatar: 'N', text: "this is the realest content on my fyp today 💯", likes: 89 },
-  { handle: '@junjun.style', avatar: 'J', text: 'wait this looks SO clean. where do i get it?', likes: 67 },
-];
 function Hero({ creatorCount, thankedCount, reachLabel, postCount, avgEng, likesLabel, commentsLabel, savesLabel }) {
   return (
     <section className="wu-hero">
-      <div className="wu-hero__confetti" aria-hidden="true">
-        <span>✦</span><span>·</span><span>✦</span><span>★</span><span>·</span>
-        <span>✦</span><span>·</span><span>★</span>
-      </div>
       <div className="wu-hero__kicker">★ Campaign complete</div>
       <h2 className="wu-hero__title">You crushed it.</h2>
       <p className="wu-hero__sub">
@@ -164,27 +151,68 @@ function Hero({ creatorCount, thankedCount, reachLabel, postCount, avgEng, likes
           <div><b>{thankedCount}/{creatorCount}</b><small>thanked</small></div>
         </div>
       </div>
+    </section>
+  );
+}
 
-      <div className="wu-hero__divider"><span>What people are saying</span></div>
-
-      <div className="wu-comments">
-        {DEMO_COMMENTS.map((c, i) => (
-          <figure key={i} className="wu-comment">
-            <blockquote>"{c.text}"</blockquote>
-            <figcaption>
-              <span className="wu-comment__av">{c.avatar}</span>
-              <span className="wu-comment__handle">{c.handle}</span>
-              <span className="wu-comment__likes">♥ {c.likes}</span>
-            </figcaption>
-          </figure>
-        ))}
+/* =========================================================
+   2. Comments — separate section, IG/TT-style thread
+   ========================================================= */
+const DEMO_COMMENTS = [
+  { handle: 'elsa.k',      avatar: 'E', text: 'omggg i need this routine — what brand??', likes: 142, time: '2d', verified: false },
+  { handle: 'nightcalls',  avatar: 'N', text: "this is the realest content on my fyp today 💯", likes: 89, time: '4d', verified: true },
+  { handle: 'junjun.style', avatar: 'J', text: 'wait this looks SO clean. where do i get it?', likes: 67, time: '5d', verified: false },
+  { handle: 'laraf.',      avatar: 'L', text: 'just bought! ty for the discount code 🙏', likes: 54, time: '6d', verified: false },
+  { handle: 'maycal',      avatar: 'M', text: 'how is your skin SO glowy', likes: 38, time: '6d', verified: false },
+];
+function CommentsSection({ posts }) {
+  const sourcePost = posts[0] || {};
+  return (
+    <section className="wu-card wu-comments-card">
+      <div className="wu-card__head">
+        <h3>What people are saying</h3>
+        <p>Top comments pulled from the campaign's posts.</p>
+      </div>
+      <div className="wu-comments-thread">
+        <div className="wu-comments-thread__src">
+          <div
+            className="wu-comments-thread__thumb"
+            style={sourcePost.thumbnailUrl ? { backgroundImage: `url(${sourcePost.thumbnailUrl})` } : undefined}
+          />
+          <div className="wu-comments-thread__src-meta">
+            <b>{sourcePost._creator?.handle || '@creator'}</b>
+            <small>{sourcePost.platform || 'Post'} · {DEMO_COMMENTS.length}+ comments</small>
+          </div>
+        </div>
+        <ul className="wu-comments-list">
+          {DEMO_COMMENTS.map((c, i) => (
+            <li key={i} className="wu-cmt">
+              <span className="wu-cmt__av">{c.avatar}</span>
+              <div className="wu-cmt__body">
+                <div className="wu-cmt__line">
+                  <b className="wu-cmt__handle">{c.handle}{c.verified && <span className="wu-cmt__verified" aria-hidden="true">✓</span>}</b>
+                  <span className="wu-cmt__text">{c.text}</span>
+                </div>
+                <div className="wu-cmt__meta">
+                  <span>{c.time}</span>
+                  <span>{c.likes} likes</span>
+                  <span>Reply</span>
+                </div>
+              </div>
+              <button className="wu-cmt__heart" aria-label="Like comment">♡</button>
+            </li>
+          ))}
+        </ul>
+        <div className="wu-comments-thread__footer">
+          <a href="#" className="wu-comments-thread__link">View all {DEMO_COMMENTS.length * 4}+ comments →</a>
+        </div>
       </div>
     </section>
   );
 }
 
 /* =========================================================
-   2. Content gallery — collage of all the posts
+   3. Content gallery — social-feed post cards, not uniform grid
    ========================================================= */
 function ContentGallery({ posts }) {
   if (posts.length === 0) return null;
@@ -192,47 +220,62 @@ function ContentGallery({ posts }) {
     <section className="wu-card wu-gallery">
       <div className="wu-card__head">
         <h3>The content they made</h3>
-        <p>{posts.length} piece{posts.length === 1 ? '' : 's'} · click any to open the original post.</p>
+        <p>{posts.length} piece{posts.length === 1 ? '' : 's'} from the campaign · click to open.</p>
       </div>
-      <div className="wu-gallery__grid">
-        {posts.map((post, i) => (
-          <a
-            key={i}
-            className="wu-gallery__tile"
-            href={post.postUrl || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={post.thumbnailUrl ? { backgroundImage: `url(${post.thumbnailUrl})` } : undefined}
-            title={`${post._creator?.name || ''} · ${post.platform || 'Post'}`}
-          >
-            {post.platform && (
-              <span className="wu-gallery__platform">{post.platform}</span>
-            )}
-            <span className="wu-gallery__overlay" aria-hidden="true">
-              <small>{post._creator?.name}</small>
-            </span>
-          </a>
-        ))}
+      <div className="wu-gallery__cards">
+        {posts.map((post, i) => {
+          const views = post._meta?.avgViews || 0;
+          const viewsLabel = views >= 1000000 ? `${(views / 1e6).toFixed(1)}M` : `${Math.round(views / 1000)}K`;
+          const likes = Math.round(views * 0.082);
+          const likesLabel = likes >= 1000 ? `${(likes / 1000).toFixed(1)}K` : `${likes}`;
+          return (
+            <a
+              key={i}
+              className="wu-gallery__card"
+              href={post.postUrl || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div className="wu-gallery__card-hd">
+                <span className="wu-gallery__av">{post._creator?.avatarInitial || '·'}</span>
+                <div className="wu-gallery__who">
+                  <b>{post._creator?.name}</b>
+                  <small>{post._creator?.handle}</small>
+                </div>
+                <span className="wu-gallery__platform">{post.platform || 'Post'}</span>
+              </div>
+              <div
+                className="wu-gallery__thumb"
+                style={post.thumbnailUrl ? { backgroundImage: `url(${post.thumbnailUrl})` } : undefined}
+              />
+              <div className="wu-gallery__card-ft">
+                <span className="wu-gallery__stat"><span aria-hidden="true">♥</span> {likesLabel}</span>
+                <span className="wu-gallery__stat"><span aria-hidden="true">▶</span> {viewsLabel}</span>
+                {post.timeAgo && <span className="wu-gallery__time">{post.timeAgo}</span>}
+              </div>
+            </a>
+          );
+        })}
       </div>
     </section>
   );
 }
 
 /* =========================================================
-   3. Catch-up tile — unthanked creators (dedicated card)
+   4. Catch-up tile — neutral, quieter
    ========================================================= */
 function CatchUpTile({ unthanked, onOpenThanks, totalCount }) {
   const pct = Math.round(((totalCount - unthanked.length) / totalCount) * 100);
   return (
     <section className="wu-card wu-catchup">
       <div className="wu-card__head wu-catchup__head">
-        <span className="wu-catchup__kicker">⏰ Almost there</span>
-        <h3>{unthanked.length} creator{unthanked.length === 1 ? '' : 's'} still to thank</h3>
-        <p>Close the loop — send them a postcard before the wrap-up's officially done.</p>
+        <span className="wu-catchup__kicker">Still to thank</span>
+        <h3>{unthanked.length} creator{unthanked.length === 1 ? '' : 's'} haven't heard from you</h3>
+        <p>Close the loop before the wrap-up is officially done.</p>
         <div className="wu-catchup__bar">
           <div className="wu-catchup__bar-fill" style={{ width: `${pct}%` }} />
-          <span className="wu-catchup__bar-label">{pct}% complete · {totalCount - unthanked.length} of {totalCount}</span>
         </div>
+        <span className="wu-catchup__bar-label">{pct}% complete · {totalCount - unthanked.length} of {totalCount}</span>
       </div>
       <ul className="wu-catchup__list">
         {unthanked.map((c) => (
@@ -257,7 +300,7 @@ function CatchUpTile({ unthanked, onOpenThanks, totalCount }) {
 }
 
 /* =========================================================
-   4. Thank-you wall — scattered polaroids of sent postcards
+   5. Thank-you wall — scattered polaroids (unchanged)
    ========================================================= */
 const PIN_ANGLES = ['-4deg', '3deg', '-2deg', '5deg', '-3deg', '2deg', '-5deg', '4deg', '-1deg', '6deg'];
 function ThankYouWall({ thanked, brandName }) {
@@ -312,7 +355,7 @@ function ThankYouWall({ thanked, brandName }) {
 }
 
 /* =========================================================
-   5. Re-collab pinboard — tilted creator chips
+   6. Re-collab pinboard (unchanged)
    ========================================================= */
 const TILT_ANGLES = ['-3deg', '2deg', '-2deg', '4deg', '-4deg', '1deg', '-1deg', '3deg', '-5deg', '5deg'];
 function ReCollabPinboard({ favorites, laters }) {
@@ -380,14 +423,14 @@ function ReCollabPinboard({ favorites, laters }) {
 }
 
 /* =========================================================
-   6. Organic rights — clean white card, no gradient green
+   7. Organic rights — single-column checklist, hanging indent
    ========================================================= */
 const ORGANIC_RIGHTS = [
-  { icon: '↻',  t: 'Cross-post to your own channels',         d: 'Re-upload to your IG, TikTok, or YouTube Shorts — credit the creator and you\'re set.' },
-  { icon: '○',  t: 'Stories & highlights',                     d: 'Repost any of these to your Stories or save them to a Highlight forever.' },
-  { icon: '⌘',  t: 'Embed on your website & blog',             d: "Use the platform's official embed code on any page you own." },
-  { icon: '✉',  t: 'Newsletter & email',                        d: 'Embed a still or link the post — perfect for monthly roundups.' },
-  { icon: '◆',  t: 'Pitch decks, press, case studies',          d: 'Use the content internally and in any unpaid materials.' },
+  { t: 'Cross-post to your own channels',         d: 'Re-upload to your IG, TikTok, or YouTube Shorts with creator credit.' },
+  { t: 'Share to Stories & Highlights',           d: 'Repost any of these to your Stories or save to a Highlight forever.' },
+  { t: 'Embed on your website & blog',            d: "Drop the platform's official embed code on any page you own." },
+  { t: 'Use in your newsletter & email',          d: 'Embed a still or link the post — works great for monthly roundups.' },
+  { t: 'Show in decks, press kits, case studies', d: 'Use the content internally and in any unpaid materials.' },
 ];
 function OrganicRightsTile() {
   return (
@@ -395,12 +438,12 @@ function OrganicRightsTile() {
       <div className="wu-card__head wu-edu__head">
         <span className="wu-edu__pill">Included · free</span>
         <h3>What you can already do with this content</h3>
-        <p>Everything from this campaign is yours to use organically for 30 days — here's the cheat sheet.</p>
+        <p>Everything from this campaign is yours to use organically for 30 days. Here's the cheat sheet.</p>
       </div>
       <ul className="wu-edu__list">
-        {ORGANIC_RIGHTS.map((r) => (
+        {ORGANIC_RIGHTS.map((r, i) => (
           <li key={r.t}>
-            <span className="wu-edu__icon" aria-hidden="true">{r.icon}</span>
+            <span className="wu-edu__num" aria-hidden="true">{i + 1}</span>
             <div className="wu-edu__copy">
               <b>{r.t}</b>
               <small>{r.d}</small>
@@ -416,14 +459,14 @@ function OrganicRightsTile() {
 }
 
 /* =========================================================
-   7. Paid options — capability multi-select (simplified)
+   8. Paid options — 2-col grid (variant C from study)
    ========================================================= */
 const PAID_CAPS = [
   { id: 'rights',    icon: '⚡', title: 'Paid usage rights',
     desc: 'License the content for your own paid ads, from your handle.' },
-  { id: 'whitelist', icon: '🤝', title: 'Whitelisting (dark posts)',
+  { id: 'whitelist', icon: '🤝', title: 'Whitelisting',
     desc: "Run paid ads from the creator's handle — feels native." },
-  { id: 'boost',     icon: '🚀', title: 'Boost the original post',
+  { id: 'boost',     icon: '🚀', title: 'Boost the original',
     desc: 'Amplify the actual organic post with paid spend.' },
   { id: 'repurpose', icon: '✂️', title: 'Long-term repurpose',
     desc: 'Extended licensing + raw cuts for owned channels.' },
@@ -450,33 +493,32 @@ function PaidOptionsSection() {
     <section className="wu-card wu-paid">
       <div className="wu-card__head">
         <h3>Want to go further?</h3>
-        <p>Tick anything you're curious about — we'll come back with options + pricing. No commitment.</p>
+        <p>Tap anything you're curious about — we'll come back with options + pricing. No commitment.</p>
       </div>
-      <div className="wu-paid__list">
+      <div className="wu-paid__grid">
         {PAID_CAPS.map((cap) => {
           const on = !!selected[cap.id];
           return (
-            <label key={cap.id} className={`wu-paid__row ${on ? 'on' : ''} ${submitted ? 'locked' : ''}`}>
-              <input
-                type="checkbox"
-                checked={on}
-                onChange={() => toggle(cap.id)}
-                disabled={submitted}
-              />
-              <span className="wu-paid__icon" aria-hidden="true">{cap.icon}</span>
-              <div className="wu-paid__copy">
-                <b>{cap.title}</b>
-                <p>{cap.desc}</p>
-              </div>
-              <span className={`wu-paid__check ${on ? 'on' : ''}`} aria-hidden="true">{on ? '✓' : ''}</span>
-            </label>
+            <button
+              key={cap.id}
+              type="button"
+              className={`wu-paid__card ${on ? 'on' : ''} ${submitted ? 'locked' : ''}`}
+              onClick={() => toggle(cap.id)}
+              disabled={submitted}
+              aria-pressed={on}
+            >
+              <span className="wu-paid__card-icon" aria-hidden="true">{cap.icon}</span>
+              <b className="wu-paid__card-title">{cap.title}</b>
+              <p className="wu-paid__card-desc">{cap.desc}</p>
+              <span className={`wu-paid__card-check ${on ? 'on' : ''}`} aria-hidden="true">{on ? '✓' : '+'}</span>
+            </button>
           );
         })}
       </div>
       <div className="wu-paid__foot">
         <span className="wu-paid__count">
           {selectedIds.length === 0
-            ? 'Tick anything you want pricing on'
+            ? 'Tap anything you want pricing on'
             : <><b>{selectedIds.length}</b> option{selectedIds.length === 1 ? '' : 's'} selected</>}
         </span>
         {submitted ? (
@@ -492,24 +534,21 @@ function PaidOptionsSection() {
 }
 
 /* =========================================================
-   8. Primary CTA — contract-aware, warm gradient
+   9. Primary CTA — toned-down, brand-portal-aligned
    ========================================================= */
 function PrimaryCTA({ hasContract, brandName }) {
   if (hasContract) {
     return (
       <section className="wu-promo wu-promo--launch">
-        <div className="wu-promo__bg" aria-hidden="true">
-          <span>★</span><span>✦</span><span>·</span><span>★</span>
-          <span>·</span><span>✦</span><span>★</span><span>·</span>
-        </div>
+        <div className="wu-promo__accent" aria-hidden="true">🚀</div>
         <div className="wu-promo__copy">
           <div className="wu-promo__kicker">Ready for round two?</div>
           <h3>Launch your next campaign</h3>
-          <p>Brief in 5 minutes · re-invite your favorites · live in 7 days.<br />Your contract covers it — no extra setup.</p>
+          <p>Brief in 5 minutes · re-invite your favorites · live in 7 days. Your contract covers it.</p>
           <div className="wu-promo__metrics">
-            <span>🚀 12 creators ready to brief</span>
-            <span>·</span>
-            <span>⏱ Avg. brief-to-live: 6 days</span>
+            <span>12 creators ready</span>
+            <span aria-hidden="true">·</span>
+            <span>Avg. brief-to-live: 6 days</span>
           </div>
         </div>
         <div className="wu-promo__cta">
@@ -521,18 +560,15 @@ function PrimaryCTA({ hasContract, brandName }) {
   }
   return (
     <section className="wu-promo wu-promo--proposal">
-      <div className="wu-promo__bg" aria-hidden="true">
-        <span>✦</span><span>·</span><span>★</span><span>·</span>
-        <span>✦</span><span>★</span><span>·</span><span>✦</span>
-      </div>
+      <div className="wu-promo__accent" aria-hidden="true">✦</div>
       <div className="wu-promo__copy">
         <div className="wu-promo__kicker">Loved this? Make it recurring.</div>
         <h3>Get a proposal for {brandName}'s monthly creator program</h3>
         <p>The creators you loved, fresh content every month — no per-campaign setup, predictable spend.</p>
         <div className="wu-promo__metrics">
-          <span>📈 Brands save ~40% vs ad hoc</span>
-          <span>·</span>
-          <span>📞 Proposal in 48h</span>
+          <span>Brands save ~40% vs ad hoc</span>
+          <span aria-hidden="true">·</span>
+          <span>Proposal in 48h</span>
         </div>
       </div>
       <div className="wu-promo__cta">
