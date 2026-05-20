@@ -252,7 +252,9 @@
   user-select: none;
 }
 
-/* Polaroid */
+/* Polaroid — proportions match a Polaroid 600 print (~88×107mm), with
+   a near-square photo and the classic wide bottom border for the
+   handwritten caption + signoff. */
 .pc-polaroid {
   width: 320px;
   height: 400px;
@@ -273,7 +275,10 @@
 }
 .pc-polaroid__photo {
   width: 100%;
-  height: 65%;
+  /* Slightly more square photo region than the original 65% — feels
+     closer to a real Polaroid 600. The handwritten caption + signoff
+     fit in the remaining 33% bottom border. */
+  height: 67%;
   background: linear-gradient(135deg, #3a2f44 0%, #5d4a6b 40%, #c89472 100%);
   background-size: cover;
   background-position: center;
@@ -1954,11 +1959,11 @@
 .stp-rc-opt--decline.on .stp-rc-mark { background: #c47a6a; border-color: #c47a6a; color: #fff; }
 
 .stp-rc-opt--later.on {
-  border-color: #9fc7a5;
-  background: #f4faf3;
+  border-color: #b8a5e8;
+  background: #f5f1ff;
 }
-.stp-rc-opt--later.on .stp-rc-emoji { background: #d8efd8; }
-.stp-rc-opt--later.on .stp-rc-mark { background: #2c7a4a; border-color: #2c7a4a; color: #fff; }
+.stp-rc-opt--later.on .stp-rc-emoji { background: #e8dfff; }
+.stp-rc-opt--later.on .stp-rc-mark { background: #7a5cfa; border-color: #7a5cfa; color: #fff; }
 
 .stp-rc-opt--favorite.on {
   border-color: #e8b94a;
@@ -2445,9 +2450,10 @@
   transform: rotate(var(--tilt));
   transition: transform .25s cubic-bezier(.2,.8,.3,1.1);
   cursor: default;
-  padding-top: 14px;
-  /* Width matches the scaled polaroid */
-  width: 220px;
+  padding: 14px 12px 24px;
+  /* Width matches the scaled polaroid + a little breathing room for the
+     drop-shadow on either side. */
+  width: 224px;
 }
 .wu-wall__pin:hover {
   transform: rotate(0) scale(1.04);
@@ -2455,25 +2461,33 @@
 }
 .wu-wall__tape {
   position: absolute;
-  top: 0; left: 50%;
+  top: 4px; left: 50%;
   transform: translateX(-50%) rotate(-4deg);
   width: 64px; height: 18px;
   background: rgba(255, 220, 150, 0.82);
   border: 1px solid rgba(0, 0, 0, 0.04);
   border-radius: 2px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
-  z-index: 2;
+  z-index: 3;
 }
+/* The wall card now uses overflow:visible so the polaroid's drop-shadow
+   can render below the bottom edge. We size the card to match the SCALED
+   polaroid dimensions exactly (220×275 at scale 0.6875) so the layout
+   still tracks visually. Adjacent pins have enough gap that any DOM
+   overflow on the sides doesn't collide. */
 .wu-wall__card {
   width: 220px;
-  /* PolaroidPostcard 320x400 scaled to 0.6875 → 220x275 */
   height: 275px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   z-index: 1;
+  /* Clip the original DOM bounds horizontally only — keeps the shadow
+     visible top/bottom but stops the unscaled polaroid bleed from
+     colliding with neighbouring pins. */
+  clip-path: inset(-30px -50px -30px -50px);
 }
 .wu-wall__card .pc-polaroid {
   transform: rotate(0) scale(0.6875);
@@ -2646,11 +2660,11 @@
   margin-right: -4px;
 }
 .wu-faves__pin--later {
-  background: linear-gradient(135deg, #f4faf3, #e8f5ea);
-  border-color: #b9d9bf;
+  background: linear-gradient(135deg, #f5f1ff, #ece6ff);
+  border-color: #c4b3f0;
 }
 .wu-faves__pin--later .wu-faves__av {
-  background: linear-gradient(135deg, #6ec98a, #b3e0bb);
+  background: linear-gradient(135deg, #9b87e0, #b8a5e8);
 }
 
 /* ============================================================

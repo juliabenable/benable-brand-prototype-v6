@@ -369,10 +369,10 @@ const RECOLLAB_OPTIONS = [
     desc: "I'd rather not work with {first} again." },
   { id: 'later',    emoji: '🤝',
     label: 'Yes, periodically',
-    desc: "Happy to work with {first} again — just not on every campaign." },
+    desc: "Loved {first}'s content — I'd like to be able to pick her for future campaigns." },
   { id: 'favorite', emoji: '⭐',
     label: 'Add to my favorites',
-    desc: 'Auto-invite {first} to every campaign I run going forward.' },
+    desc: 'Absolutely amazing — please auto-invite {first} to every campaign.' },
 ];
 function StepReCollab({ firstName, value, onPick, onBack, onDone }) {
   return (
