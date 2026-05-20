@@ -2423,24 +2423,29 @@
 .wu-wall__pinboard {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px 28px;
+  gap: 28px 32px;
   justify-content: center;
-  padding: 28px 8px 18px;
+  padding: 36px 16px 28px;
+  min-height: 320px;
   background:
-    radial-gradient(circle at 12% 18%, rgba(196, 165, 130, 0.08) 0, transparent 60%),
-    radial-gradient(circle at 88% 78%, rgba(232, 90, 130, 0.06) 0, transparent 60%);
+    radial-gradient(circle at 12% 18%, rgba(196, 165, 130, 0.10) 0, transparent 55%),
+    radial-gradient(circle at 88% 82%, rgba(232, 90, 130, 0.08) 0, transparent 55%),
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0, transparent 70%);
   border-radius: 14px;
   margin: 4px 0 6px;
+  align-items: flex-start;
 }
 .wu-wall__pin {
   position: relative;
-  width: 200px;
   display: flex;
   flex-direction: column;
   align-items: center;
   transform: rotate(var(--tilt));
   transition: transform .25s cubic-bezier(.2,.8,.3,1.1);
   cursor: default;
+  padding-top: 14px;
+  /* Width matches the scaled polaroid */
+  width: 220px;
 }
 .wu-wall__pin:hover {
   transform: rotate(0) scale(1.04);
@@ -2448,47 +2453,63 @@
 }
 .wu-wall__tape {
   position: absolute;
-  top: -8px; left: 50%;
+  top: 0; left: 50%;
   transform: translateX(-50%) rotate(-4deg);
-  width: 60px; height: 16px;
-  background: rgba(255, 220, 150, 0.78);
+  width: 64px; height: 18px;
+  background: rgba(255, 220, 150, 0.82);
   border: 1px solid rgba(0, 0, 0, 0.04);
   border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   z-index: 2;
 }
 .wu-wall__card {
-  width: 200px;
-  /* shrink the existing PolaroidPostcard from 320x400 → ~200x250 */
-  height: 250px;
+  width: 220px;
+  /* PolaroidPostcard 320x400 scaled to 0.6875 → 220x275 */
+  height: 275px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   overflow: hidden;
-}
-.wu-wall__card .pc-polaroid {
-  transform: rotate(0) scale(0.625);
-  transform-origin: top center;
-}
-.wu-wall__caption {
-  margin-top: -52px; /* pull up under the polaroid, accounting for scale */
-  text-align: center;
-  background: rgba(255, 255, 255, 0.86);
-  border-radius: 999px;
-  padding: 4px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
   position: relative;
   z-index: 1;
 }
-.wu-wall__caption b {
-  font-size: 12px; font-weight: 600; color: #1a1a1a;
+.wu-wall__card .pc-polaroid {
+  transform: rotate(0) scale(0.6875);
+  transform-origin: top center;
+}
+/* Recipient label sits cleanly BELOW the polaroid card, not overlapping
+   the signoff (which now reads "— Christine, Pikora"). */
+.wu-wall__caption {
+  margin-top: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
   line-height: 1.2;
 }
-.wu-wall__caption small {
-  font-size: 10px; color: #888; line-height: 1.2;
+.wu-wall__caption-label {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a958c;
+  margin-bottom: 3px;
 }
+.wu-wall__caption b {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.wu-wall__caption small {
+  font-size: 11px;
+  color: #888;
+}
+
+/* When the wall has only one or two pins, give them visual presence by
+   centring around a placeholder ghost so the wall doesn't feel sparse. */
+.wu-wall__pinboard--single { padding: 44px 16px 32px; }
 
 /* Nudge for unthanked creators (below the wall) */
 .wu-wall__nudge {

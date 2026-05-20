@@ -127,7 +127,7 @@ function ThankYouWall({ thanked, unthanked, onOpenThanks, brandName }) {
       </div>
 
       {thanked.length > 0 && (
-        <div className="wu-wall__pinboard">
+        <div className={`wu-wall__pinboard ${thanked.length <= 2 ? 'wu-wall__pinboard--single' : ''}`}>
           {thanked.map((c, i) => {
             const post = c.posts[0] || {};
             return (
@@ -148,6 +148,7 @@ function ThankYouWall({ thanked, unthanked, onOpenThanks, brandName }) {
                   />
                 </div>
                 <div className="wu-wall__caption">
+                  <span className="wu-wall__caption-label">Sent to</span>
                   <b>{c.creator.name}</b>
                   <small>{c.creator.handle}</small>
                 </div>
