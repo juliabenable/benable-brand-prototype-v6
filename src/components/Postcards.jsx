@@ -6,7 +6,7 @@
  *          stamp + postmark + sparkle accents auto-filled.
  */
 
-export function PolaroidPostcard({ thumbnailUrl, platform, brandName, message, signoff, brandInitial }) {
+export function PolaroidPostcard({ thumbnailUrl, platform, brandName, message, signoff }) {
   return (
     <div className="pc pc-polaroid">
       <div className="pc-polaroid__tape" />
@@ -17,17 +17,9 @@ export function PolaroidPostcard({ thumbnailUrl, platform, brandName, message, s
         {platform && (
           <span className="pc-polaroid__platform-tag">{platformIcon(platform)} {platform}</span>
         )}
-        {brandName && (
-          <span className="pc-polaroid__brand" title={`from ${brandName}`}>
-            <span className="pc-polaroid__brand-av" aria-hidden="true">
-              {(brandInitial || brandName.charAt(0)).toUpperCase()}
-            </span>
-            <span className="pc-polaroid__brand-name">{brandName}</span>
-          </span>
-        )}
       </div>
       <div className="pc-polaroid__caption">{message || 'we love what you made!'}</div>
-      <div className="pc-polaroid__signoff">{signoff || `from ${brandName}`}</div>
+      <div className="pc-polaroid__signoff">{signoff || `— ${brandName || ''}`}</div>
     </div>
   );
 }

@@ -144,6 +144,7 @@ function ThankYouWall({ thanked, unthanked, onOpenThanks, brandName }) {
                     platform={post.platform}
                     brandName={brandName}
                     message={c.state.postcard.publicMessage}
+                    signoff={c.state.postcard.signature ? `— ${c.state.postcard.signature}` : undefined}
                   />
                 </div>
                 <div className="wu-wall__caption">

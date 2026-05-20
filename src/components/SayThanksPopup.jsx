@@ -36,11 +36,13 @@ export default function SayThanksPopup({
   const [reCollab, setReCollabLocal] = useState(existing.reCollab);
   const post = posts[idx] || posts[0] || {};
 
-  // pre-drafted messages
+  // pre-drafted messages + editable signature
   const draftPublic = `${firstName} was a dream to work with — top-level content.`;
   const draftPrivate = `OMG ${firstName} you killed it — your captions had me laughing out loud. Thank you 🤍`;
+  const defaultSignature = `Christine, ${brandName}`;
   const [publicMessage, setPublicMessage] = useState(existing.postcard?.publicMessage ?? draftPublic);
   const [privateMessage, setPrivateMessage] = useState(existing.postcard?.privateMessage ?? draftPrivate);
+  const [signature, setSignature] = useState(existing.postcard?.signature ?? defaultSignature);
 
   // Escape + body lock
   useEffect(() => {
@@ -62,6 +64,7 @@ export default function SayThanksPopup({
         style: 'polaroid',
         publicMessage,
         privateMessage,
+        signature,
         sentAt: new Date().toISOString(),
       };
       savePostcard(campaignId, creator.handle, record);
@@ -113,6 +116,8 @@ export default function SayThanksPopup({
               setPublicMessage={setPublicMessage}
               privateMessage={privateMessage}
               setPrivateMessage={setPrivateMessage}
+              signature={signature}
+              setSignature={setSignature}
               onBack={() => setStep(1)}
               onSkip={() => setStep(3)}
               onSend={send}
@@ -143,6 +148,7 @@ export default function SayThanksPopup({
                         platform={post.platform}
                         brandName={brandName}
                         message={publicMessage}
+                        signoff={`— ${signature}`}
                       />
                     </div>
                   </div>
@@ -187,12 +193,7 @@ function Stepper({ step, setStep }) {
   );
 }
 
-/* ---------- Step 1: View — Instagram-style card ---------- */
-function postRatio(platform) {
-  const p = (platform || '').toLowerCase();
-  if (p.includes('reel') || p.includes('stor') || p.includes('tiktok')) return '9 / 16';
-  return '4 / 5';
-}
+/* ---------- Step 1: View — Instagram-style card (image shown in full) ---------- */
 function StepView({ posts, idx, setIdx, post, creator, onNext }) {
   const single = posts.length === 1;
   return (
@@ -212,13 +213,16 @@ function StepView({ posts, idx, setIdx, post, creator, onNext }) {
               </div>
               <span className="stp-view-card__more" aria-hidden="true">···</span>
             </div>
-            <div
-              className="stp-view-card__img"
-              style={{
-                aspectRatio: postRatio(post.platform),
-                ...(post.thumbnailUrl ? { backgroundImage: `url(${post.thumbnailUrl})` } : null),
-              }}
-            >
+            <div className="stp-view-card__media">
+              {post.thumbnailUrl ? (
+                <img
+                  src={post.thumbnailUrl}
+                  alt=""
+                  className="stp-view-card__img"
+                />
+              ) : (
+                <div className="stp-view-card__img stp-view-card__img--placeholder" />
+              )}
               {!single && (
                 <div className="stp-view-arrows">
                   <button aria-label="Previous post" onClick={() => setIdx((i) => (i - 1 + posts.length) % posts.length)}>‹</button>
@@ -234,8 +238,12 @@ function StepView({ posts, idx, setIdx, post, creator, onNext }) {
           </div>
         </div>
         <aside className="stp-view-side">
-          <div className="stp-view-count">
-            <b>{post.platform || 'Post'}</b> · {idx + 1} of {posts.length}{post.timeAgo ? ` · ${post.timeAgo}` : ''}
+          <div className="stp-view-side__hd">
+            <span className="stp-view-side__av">{creator.avatarInitial}</span>
+            <div>
+              <b>{creator.name}</b>
+              <small>{post.platform || 'Post'} · {idx + 1} of {posts.length}{post.timeAgo ? ` · ${post.timeAgo}` : ''}</small>
+            </div>
           </div>
           <p className="stp-view-caption">{post.caption || 'No caption.'}</p>
           {post.postUrl && (
@@ -253,13 +261,15 @@ function StepView({ posts, idx, setIdx, post, creator, onNext }) {
   );
 }
 
-/* ---------- Step 2: Thank (postcard + public + private) ---------- */
+/* ---------- Step 2: Thank (postcard + public + private + signature) ---------- */
 function StepThank({
   firstName, brandName, post,
   postcardSent, publicMessage, setPublicMessage, privateMessage, setPrivateMessage,
+  signature, setSignature,
   onBack, onSkip, onSend, sending,
 }) {
   const viewOnly = !!postcardSent;
+  const sigUsed = postcardSent?.signature || signature;
   return (
     <div className="stp-step stp-step--thank">
       <div className="stp-step__hd">
@@ -273,6 +283,7 @@ function StepThank({
             platform={post.platform}
             brandName={brandName}
             message={publicMessage}
+            signoff={sigUsed ? `— ${sigUsed}` : undefined}
           />
         </div>
         <div className="stp-thank-fields">
@@ -284,7 +295,7 @@ function StepThank({
               {postcardSent.privateMessage && (
                 <div className="stp-private-recap">
                   <span className="stp-field-label">Private note</span>
-                  <p>{postcardSent.privateMessage}</p>
+                  <p className="stp-private-recap__msg">{postcardSent.privateMessage}</p>
                 </div>
               )}
             </div>
@@ -302,7 +313,7 @@ function StepThank({
                 />
                 <small>{publicMessage.length} / {PUBLIC_MAX}</small>
               </label>
-              <label className="stp-field">
+              <label className="stp-field stp-field--plain">
                 <span className="stp-field-label">Private note <em>· just for {firstName}, won't appear publicly</em></span>
                 <textarea
                   rows={3}
@@ -313,6 +324,17 @@ function StepThank({
                   disabled={sending}
                 />
                 <small>{privateMessage.length} / {PRIVATE_MAX}</small>
+              </label>
+              <label className="stp-field stp-field--plain stp-field--sig">
+                <span className="stp-field-label">Sign as <em>· shows under the postcard as your signature</em></span>
+                <input
+                  type="text"
+                  value={signature}
+                  onChange={(e) => setSignature(e.target.value)}
+                  placeholder="e.g. Christine, Pikora"
+                  disabled={sending}
+                  maxLength={48}
+                />
               </label>
             </>
           )}
@@ -341,9 +363,9 @@ const RECOLLAB_OPTIONS = [
   { id: 'decline',  emoji: '🙅',
     label: 'Nah, one and done',
     desc: "I'd rather not work with {first} again." },
-  { id: 'later',    emoji: '🌱',
-    label: 'Yes — but not next time',
-    desc: "Happy to work with {first} again, just not on the very next campaign." },
+  { id: 'later',    emoji: '🤝',
+    label: 'Yes, periodically',
+    desc: "Happy to work with {first} again — just not on every campaign." },
   { id: 'favorite', emoji: '⭐',
     label: 'Add to my favorites',
     desc: 'Auto-invite {first} to every campaign I run going forward.' },

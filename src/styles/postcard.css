@@ -1388,13 +1388,13 @@
 
 /* ============================================================
    v6 — Say Thanks Popup (stp-*) — multi-step modal
-   Unified design: warm off-white shell, dark primary, coral accent.
+   Brand-portal aligned: pure white shell with subtle warm-white
+   panel gradient (matches --page-bg + --panel-bg tokens).
    ============================================================ */
 
 /* --- shared palette tokens (kept inline for prototype) ---
-   surface:   #faf7f3
-   panel:     #ffffff
-   border:    #ebebeb / #dcdcdc
+   surface:   #ffffff (page) / linear-gradient(180deg, #fff, #fdfcfb) (panels)
+   border:    #ebebeb
    ink:       #1a1a1a
    muted:     #717171
    accent:    #ff7a8c (coral-pink for hearts / accents)
@@ -1417,7 +1417,7 @@
   width: 100%;
   max-width: 980px;
   height: min(740px, 92vh);
-  background: #faf7f3;
+  background: linear-gradient(180deg, #ffffff 0%, #fdfcfb 100%);
   border-radius: 18px;
   box-shadow: 0 24px 60px rgba(17, 24, 39, 0.28);
   display: flex;
@@ -1531,7 +1531,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: #faf7f3;
+  background: linear-gradient(180deg, #ffffff 0%, #fdfcfb 100%);
 }
 
 /* Step header (consistent treatment for View / Thank / Re-collab) */
@@ -1647,15 +1647,31 @@
   color: #9a9a9a; font-size: 18px; letter-spacing: 1px;
   flex-shrink: 0;
 }
-.stp-view-card__img {
-  background: linear-gradient(135deg, #3a2f44, #5d4a6b 40%, #c89472);
-  background-size: cover;
-  background-position: center;
+/* Media wrapper — dark backdrop so any letterboxing reads as intentional
+   (matches how Instagram + YouTube show portrait videos in a horizontal
+   frame). The actual <img> sits inside with object-fit: contain so the
+   whole image is visible, never cropped. */
+.stp-view-card__media {
   position: relative;
   width: 100%;
-  /* aspect-ratio is honored until max-height kicks in; for tall reels
-     the height is capped and the image becomes a cropped frame */
-  max-height: min(520px, calc(92vh - 280px));
+  background: #0e0e10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* leaves room for the modal chrome (top bar + step header + footer) */
+  height: min(520px, calc(92vh - 280px));
+  overflow: hidden;
+}
+.stp-view-card__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.stp-view-card__img--placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #3a2f44, #5d4a6b 40%, #c89472);
 }
 .stp-view-arrows {
   position: absolute; inset: 0;
@@ -1683,12 +1699,13 @@
 }
 .stp-view-dots span.on { background: #fff; }
 
-/* right-side meta panel */
+/* right-side meta panel — mirrors the Instagram caption sidebar:
+   creator header at top, caption flows below, view-original link pinned bottom */
 .stp-view-side {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px 18px;
+  gap: 14px;
+  padding: 16px 18px;
   background: #fff;
   border-radius: 14px;
   border: 1px solid #ececea;
@@ -1696,18 +1713,37 @@
   overflow-y: auto;
   align-self: stretch;
 }
-.stp-view-count {
-  font-size: 12px; color: #717171;
-  letter-spacing: 0.01em;
+.stp-view-side__hd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0efeb;
 }
-.stp-view-count b {
-  color: #1a1a1a; font-weight: 700;
+.stp-view-side__hd b {
+  display: block;
+  font-size: 13px; font-weight: 600; color: #1a1a1a;
+  line-height: 1.2;
+}
+.stp-view-side__hd small {
+  display: block;
+  font-size: 11px; color: #717171; margin-top: 2px;
+}
+.stp-view-side__av {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff9eb0, #ffd1a8);
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 13px;
+  flex-shrink: 0;
 }
 .stp-view-caption {
   font-size: 14px;
   color: #2a2a2a;
   line-height: 1.55;
   margin: 0;
+  flex: 1;
 }
 .stp-view-link {
   margin-top: auto;
@@ -1761,7 +1797,8 @@
   font-weight: 500;
   color: #717171;
 }
-.stp-field textarea {
+.stp-field textarea,
+.stp-field input[type="text"] {
   font-family: 'Caveat', 'Bradley Hand', cursive, system-ui;
   font-size: 18px;
   line-height: 1.3;
@@ -1774,11 +1811,24 @@
   outline: none;
   transition: border-color .12s, background .12s;
 }
-.stp-field textarea:focus {
+/* Private note + signature use the normal product font — handwriting
+   is reserved for the public postcard caption only. */
+.stp-field--plain textarea,
+.stp-field--plain input[type="text"] {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.stp-field--sig input[type="text"] {
+  font-weight: 500;
+}
+.stp-field textarea:focus,
+.stp-field input[type="text"]:focus {
   border-color: #1a1a1a;
   background: #fff;
 }
-.stp-field textarea:disabled { opacity: .6; }
+.stp-field textarea:disabled,
+.stp-field input[type="text"]:disabled { opacity: .6; }
 .stp-field small {
   align-self: flex-end;
   font-size: 11px;
@@ -1811,11 +1861,11 @@
   flex-direction: column;
   gap: 6px;
 }
-.stp-private-recap p {
-  font-family: 'Caveat', 'Bradley Hand', cursive, system-ui;
-  font-size: 18px;
+.stp-private-recap__msg {
+  font-family: inherit;
+  font-size: 14px;
   color: #1a1a1a;
-  line-height: 1.3;
+  line-height: 1.55;
   margin: 0;
 }
 
