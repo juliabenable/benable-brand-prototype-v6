@@ -1273,7 +1273,8 @@
 .preview-action-btn:hover,
 .preview-action-btn:active {
   /* Warm coral pill — grabs attention, ties to the heart language
-     of the "say thanks" flow without being a black box on the page. */
+     of the "say thanks" flow without being a black box on the page.
+     No box-shadow per Tony's pass — sits flat in the row. */
   background: linear-gradient(135deg, #ff8aa0 0%, #ff6b85 100%) !important;
   color: #fff !important;
   border: 0 !important;
@@ -1287,15 +1288,12 @@
   font-weight: 600 !important;
   cursor: pointer !important;
   white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(255, 107, 133, 0.32),
-              0 1px 2px rgba(255, 107, 133, 0.16);
-  transition: transform .08s ease, box-shadow .14s ease, filter .14s ease;
+  box-shadow: none !important;
+  transition: transform .08s ease, filter .14s ease;
 }
 .preview-action-btn:hover {
   transform: translateY(-1px);
   filter: brightness(1.04);
-  box-shadow: 0 8px 18px rgba(255, 107, 133, 0.4),
-              0 2px 4px rgba(255, 107, 133, 0.2);
 }
 .preview-action-btn:active {
   transform: translateY(0);
@@ -1381,22 +1379,37 @@
 }
 
 /* ============================================================
-   v6 — Wrap-up tab pill in the captured tab bar (injected button)
+   v6 — Wrap-up tab in the captured tab bar (injected button).
+   Styled as a coral-gradient pill — visually distinct from the
+   underlined Dashboard/Content tabs so the brand sees this as
+   "here's the new thing to do," not just another tab.
    ============================================================ */
-.workflow-dashboard-tab.wu-tab {
-  position: relative;
+.workflow-dashboard-tab.wu-tab,
+.workflow-dashboard-tab.wu-tab:hover,
+.workflow-dashboard-tab.wu-tab:focus,
+.workflow-dashboard-tab.wu-tab.active {
+  background: linear-gradient(135deg, #ff8aa0 0%, #ff6b85 100%) !important;
+  color: #fff !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  padding: 7px 16px !important;
+  margin-left: 14px;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  min-height: 32px;
+  align-self: center;
+  transition: transform .1s ease, filter .14s ease;
 }
 .workflow-dashboard-tab.wu-tab::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 60%;
-  background: linear-gradient(180deg, #f0a830, #e85a82);
-  border-radius: 2px;
-  opacity: 0.7;
+  /* Drop the old vertical stripe — the pill is the visual now. */
+  display: none !important;
+}
+.workflow-dashboard-tab.wu-tab:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+.workflow-dashboard-tab.wu-tab:active {
+  transform: translateY(0);
 }
 
 /* ============================================================
