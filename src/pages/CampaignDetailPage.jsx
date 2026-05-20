@@ -289,10 +289,17 @@ function decorateDashboardRow(tr, campaignId) {
     const noteCell = tr.querySelector('.creator-management-note-col');
     const host = noteCell || tr.querySelector('td:nth-child(3)') || tr.lastElementChild;
     if (host) {
+      // Hide any placeholder note text ("Benable team coordinating…") on rows
+      // where we have real relationship chips to show — it makes the chips
+      // sit at the row's vertical center instead of pushed below the italic
+      // placeholder.
+      host.querySelectorAll(':scope > *:not(.relationship-strip)').forEach((el) => {
+        el.style.display = 'none';
+      });
       const strip = document.createElement('div');
       strip.className = 'relationship-strip';
       strip.innerHTML = chips.join('');
-      host.appendChild(strip);
+      host.insertBefore(strip, host.firstChild);
     }
   }
 }

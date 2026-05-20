@@ -1059,12 +1059,14 @@
 .rt-primary.is-done { background: #1a7a44; }
 .rt-primary.is-done:hover { background: #176b3c; }
 
-/* Cross-creator relationship strip on Dashboard rows */
+/* Cross-creator relationship strip on Dashboard rows.
+   Sits centred on the row baseline by default (no top margin) so the
+   chips align with the status pill, creator name, and View button. */
 .relationship-strip {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
-  margin-top: 8px;
 }
 .rel-chip {
   display: inline-flex;
@@ -1286,14 +1288,19 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
 }
 .preview-action-btn > span[aria-hidden="true"] { color: #ff7aa3; }
+
+/* "Thanked" treatment: calm and informational rather than a CTA. White
+   pill with subtle border + dark text + a small green check — signals
+   "done" without competing for attention. */
 .preview-action-btn--thanked,
 .preview-action-btn--thanked:link,
 .preview-action-btn--thanked:visited,
 .preview-action-btn--thanked:hover,
 .preview-action-btn--thanked:active {
-  background: #fdf2ee !important;
-  color: #b04a4a !important;
-  border: 1px solid #f4d6c6 !important;
+  background: #fff !important;
+  color: #1a1a1a !important;
+  border: 1px solid #e0e0de !important;
+  padding: 6px 13px !important;
 }
 .preview-action-btn--thanked .dash-thanked-dot {
   display: inline-flex;
@@ -1301,15 +1308,17 @@
   justify-content: center;
   width: 16px; height: 16px;
   border-radius: 50%;
-  background: #c47a6a;
+  background: #2c7a4a;
   color: #fff !important;
   font-size: 9px;
   font-weight: 800;
   line-height: 1;
+  flex-shrink: 0;
 }
 .preview-action-btn--thanked:hover {
-  background: #fbe6df !important;
-  box-shadow: 0 4px 10px rgba(196, 122, 106, 0.14);
+  background: #fafaf8 !important;
+  border-color: #1a1a1a !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 /* ============================================================
