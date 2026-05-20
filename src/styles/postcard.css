@@ -1543,22 +1543,28 @@
   background: linear-gradient(180deg, #ffffff 0%, #fdfcfb 100%);
 }
 
-/* Step header (consistent treatment for View / Thank / Re-collab) */
+/* Step header (consistent treatment for View / Thank / Re-collab).
+   Generous vertical rhythm: 28px top, 8px between h3 and subtitle,
+   28px breathing room below before the step body starts. */
 .stp-step__hd {
-  padding: 22px 30px 0;
+  padding: 28px 30px 0;
   text-align: center;
 }
 .stp-step__hd h3 {
-  margin: 0 0 4px;
-  font-size: 20px;
+  margin: 0 0 8px;
+  font-size: 22px;
   font-weight: 600;
   color: #1a1a1a;
   letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 .stp-step__hd p {
   margin: 0;
-  font-size: 13px;
+  font-size: 13.5px;
   color: #717171;
+  line-height: 1.5;
+  max-width: 600px;
+  margin-inline: auto;
 }
 
 /* Footer (back / actions) */
@@ -1598,84 +1604,41 @@
 .stp-link:hover:not(:disabled) { color: #1a1a1a; text-decoration: underline; }
 .stp-link:disabled { opacity: .5; cursor: not-allowed; }
 
-/* ---------- Step 1: View — Instagram-style card on a warm canvas ---------- */
+/* ---------- Step 1: View — Instagram-DESKTOP card (one unified card,
+   image flush to the caption sidebar, image sized to its native ratio
+   so there's no letterbox padding). ---------- */
 .stp-step--view .stp-view-stage {
   flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 24px;
-  padding: 18px 30px 24px;
-  min-height: 0;
-}
-.stp-view-media {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
+  padding: 18px 30px 26px;
   min-height: 0;
-  overflow: hidden;
 }
 .stp-view-card {
+  display: flex;
   background: #fff;
   border-radius: 14px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   border: 1px solid #ececea;
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
   overflow: hidden;
+  max-width: 100%;
+  align-self: center;
 }
-.stp-view-card__head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-}
-.stp-view-card__av {
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #ff9eb0, #ffd1a8);
-  color: #fff;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-weight: 600; font-size: 13px;
-  flex-shrink: 0;
-}
-.stp-view-card__who {
-  display: flex; flex-direction: column; gap: 1px;
-  min-width: 0; flex: 1;
-}
-.stp-view-card__who b {
-  font-size: 13px; color: #1a1a1a; font-weight: 600;
-  line-height: 1.2;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.stp-view-card__who small {
-  font-size: 11px; color: #717171; line-height: 1.2;
-}
-.stp-view-card__more {
-  color: #9a9a9a; font-size: 18px; letter-spacing: 1px;
-  flex-shrink: 0;
-}
-/* Media wrapper — dark backdrop so any letterboxing reads as intentional
-   (matches how Instagram + YouTube show portrait videos in a horizontal
-   frame). The actual <img> sits inside with object-fit: contain so the
-   whole image is visible, never cropped. */
+/* Media pane — aspect-ratio is set inline based on the platform (9:16 for
+   reels/stories/tiktok, 4:5 otherwise), so the container exactly matches
+   the image and there's no letterboxing OR cropping. */
 .stp-view-card__media {
+  height: min(540px, calc(92vh - 290px));
+  background: #000;
   position: relative;
-  width: 100%;
-  background: #0e0e10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* leaves room for the modal chrome (top bar + step header + footer) */
-  height: min(520px, calc(92vh - 280px));
-  overflow: hidden;
+  flex-shrink: 0;
 }
 .stp-view-card__img {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 .stp-view-card__img--placeholder {
   width: 100%;
@@ -1708,37 +1671,25 @@
 }
 .stp-view-dots span.on { background: #fff; }
 
-/* right-side meta panel — mirrors the Instagram caption sidebar:
-   creator header at top, caption flows below, view-original link pinned bottom */
-.stp-view-side {
+/* Side pane — fixed width, sits flush to the media pane with a shared
+   border. Creator header on top, caption middle, link at the bottom. */
+.stp-view-card__side {
+  width: 340px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 18px;
+  border-left: 1px solid #ececea;
   background: #fff;
-  border-radius: 14px;
-  border: 1px solid #ececea;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
-  overflow-y: auto;
-  align-self: stretch;
+  min-width: 0;
 }
-.stp-view-side__hd {
+.stp-view-card__side-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-bottom: 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid #f0efeb;
+  flex-shrink: 0;
 }
-.stp-view-side__hd b {
-  display: block;
-  font-size: 13px; font-weight: 600; color: #1a1a1a;
-  line-height: 1.2;
-}
-.stp-view-side__hd small {
-  display: block;
-  font-size: 11px; color: #717171; margin-top: 2px;
-}
-.stp-view-side__av {
+.stp-view-card__av {
   width: 32px; height: 32px;
   border-radius: 50%;
   background: linear-gradient(135deg, #ff9eb0, #ffd1a8);
@@ -1747,31 +1698,74 @@
   font-weight: 600; font-size: 13px;
   flex-shrink: 0;
 }
-.stp-view-caption {
+.stp-view-card__who {
+  flex: 1; min-width: 0;
+}
+.stp-view-card__who b {
+  display: block;
+  font-size: 13px; font-weight: 600; color: #1a1a1a;
+  line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.stp-view-card__who small {
+  display: block;
+  font-size: 11px; color: #717171; margin-top: 2px;
+}
+.stp-view-card__more {
+  color: #9a9a9a; font-size: 18px; letter-spacing: 1px;
+  flex-shrink: 0;
+}
+.stp-view-card__side-body {
+  flex: 1;
+  padding: 14px 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+.stp-view-card__caption {
+  margin: 0;
   font-size: 14px;
   color: #2a2a2a;
   line-height: 1.55;
-  margin: 0;
-  flex: 1;
 }
-.stp-view-link {
-  margin-top: auto;
+.stp-view-card__caption b {
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-right: 4px;
+}
+.stp-view-card__count {
+  font-size: 11px;
+  color: #9a9a9a;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.stp-view-card__side-foot {
+  padding: 12px 16px;
+  border-top: 1px solid #f0efeb;
+  flex-shrink: 0;
+}
+.stp-view-card__link {
   font-size: 13px; font-weight: 600;
   color: #1a1a1a;
   text-decoration: none;
   border-bottom: 1px solid #1a1a1a;
-  align-self: flex-start;
   padding-bottom: 1px;
+  display: inline-block;
 }
-.stp-view-link:hover { color: #ff7a8c; border-color: #ff7a8c; }
+.stp-view-card__link:hover { color: #ff7a8c; border-color: #ff7a8c; }
 
-/* ---------- Step 2: Thank (postcard + fields) ---------- */
+/* ---------- Step 2: Thank (postcard + fields).
+   28px breathing room between the step header and the polaroid +
+   fields, matched on the bottom so the layout doesn't feel cramped. */
 .stp-step--thank .stp-thank-row {
   flex: 1;
   display: grid;
   grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
-  gap: 30px;
-  padding: 18px 30px 24px;
+  gap: 32px;
+  padding: 28px 30px 28px;
   align-items: start;
   overflow-y: auto;
 }
@@ -2005,16 +1999,15 @@
   .stp-top { grid-template-columns: 1fr auto; }
   .stp-stepper { grid-column: 1 / -1; grid-row: 2; justify-self: stretch; }
   .stp-stepper__btn { flex: 1; justify-content: center; }
-  .stp-step__hd { padding: 16px 18px 0; }
+  .stp-step__hd { padding: 18px 18px 0; }
   .stp-step--view .stp-view-stage {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
     padding: 14px 16px 18px;
-    gap: 14px;
   }
-  .stp-view-card { max-width: 100%; }
-  .stp-view-card__img { max-height: 60vh; }
-  .stp-step--thank .stp-thank-row { grid-template-columns: 1fr; padding: 14px 16px 18px; gap: 18px; }
+  .stp-view-card { flex-direction: column; max-width: 100%; width: 100%; }
+  .stp-view-card__media { width: 100%; height: auto; max-height: 60vh; }
+  .stp-view-card__side { width: 100%; border-left: 0; border-top: 1px solid #ececea; }
+  .stp-view-card__side-body { max-height: 200px; }
+  .stp-step--thank .stp-thank-row { grid-template-columns: 1fr; padding: 22px 16px 22px; gap: 22px; }
   .stp-thank-card { transform: scale(0.85); }
   .stp-rc-options { padding: 0 16px 18px; }
   .stp-rc-opt { grid-template-columns: 44px 1fr 24px; gap: 12px; padding: 13px 14px; }

@@ -193,9 +193,15 @@ function Stepper({ step, setStep }) {
   );
 }
 
-/* ---------- Step 1: View — Instagram-style card (image shown in full) ---------- */
+/* ---------- Step 1: View — single Instagram-desktop card (image flush to caption) ---------- */
+function postRatio(platform) {
+  const p = (platform || '').toLowerCase();
+  if (p.includes('reel') || p.includes('stor') || p.includes('tiktok')) return '9 / 16';
+  return '4 / 5';
+}
 function StepView({ posts, idx, setIdx, post, creator, onNext }) {
   const single = posts.length === 1;
+  const ratio = postRatio(post.platform);
   return (
     <div className="stp-step stp-step--view">
       <div className="stp-step__hd">
@@ -203,56 +209,54 @@ function StepView({ posts, idx, setIdx, post, creator, onNext }) {
         <p>Browse {posts.length === 1 ? 'the post' : `all ${posts.length} posts`} before you send a thank-you.</p>
       </div>
       <div className="stp-view-stage">
-        <div className="stp-view-media">
-          <div className="stp-view-card">
-            <div className="stp-view-card__head">
+        <article className="stp-view-card">
+          <div className="stp-view-card__media" style={{ aspectRatio: ratio }}>
+            {post.thumbnailUrl ? (
+              <img src={post.thumbnailUrl} alt="" className="stp-view-card__img" />
+            ) : (
+              <div className="stp-view-card__img stp-view-card__img--placeholder" />
+            )}
+            {!single && (
+              <>
+                <div className="stp-view-arrows">
+                  <button aria-label="Previous post" onClick={() => setIdx((i) => (i - 1 + posts.length) % posts.length)}>‹</button>
+                  <button aria-label="Next post" onClick={() => setIdx((i) => (i + 1) % posts.length)}>›</button>
+                </div>
+                <div className="stp-view-dots">
+                  {posts.map((_, i) => <span key={i} className={i === idx ? 'on' : ''} />)}
+                </div>
+              </>
+            )}
+          </div>
+
+          <aside className="stp-view-card__side">
+            <header className="stp-view-card__side-head">
               <span className="stp-view-card__av">{creator.avatarInitial}</span>
               <div className="stp-view-card__who">
                 <b>{creator.name}</b>
                 <small>{post.platform || 'Post'}{post.timeAgo ? ` · ${post.timeAgo}` : ''}</small>
               </div>
               <span className="stp-view-card__more" aria-hidden="true">···</span>
-            </div>
-            <div className="stp-view-card__media">
-              {post.thumbnailUrl ? (
-                <img
-                  src={post.thumbnailUrl}
-                  alt=""
-                  className="stp-view-card__img"
-                />
-              ) : (
-                <div className="stp-view-card__img stp-view-card__img--placeholder" />
-              )}
-              {!single && (
-                <div className="stp-view-arrows">
-                  <button aria-label="Previous post" onClick={() => setIdx((i) => (i - 1 + posts.length) % posts.length)}>‹</button>
-                  <button aria-label="Next post" onClick={() => setIdx((i) => (i + 1) % posts.length)}>›</button>
-                </div>
-              )}
-              {!single && (
-                <div className="stp-view-dots">
-                  {posts.map((_, i) => <span key={i} className={i === idx ? 'on' : ''} />)}
-                </div>
+            </header>
+            <div className="stp-view-card__side-body">
+              <p className="stp-view-card__caption">
+                <b>{creator.handle.replace(/^@/, '')}</b> {post.caption || ''}
+              </p>
+              {posts.length > 1 && (
+                <div className="stp-view-card__count">{idx + 1} of {posts.length}</div>
               )}
             </div>
-          </div>
-        </div>
-        <aside className="stp-view-side">
-          <div className="stp-view-side__hd">
-            <span className="stp-view-side__av">{creator.avatarInitial}</span>
-            <div>
-              <b>{creator.name}</b>
-              <small>{post.platform || 'Post'} · {idx + 1} of {posts.length}{post.timeAgo ? ` · ${post.timeAgo}` : ''}</small>
-            </div>
-          </div>
-          <p className="stp-view-caption">{post.caption || 'No caption.'}</p>
-          {post.postUrl && (
-            <a className="stp-view-link" href={post.postUrl} target="_blank" rel="noopener noreferrer">
-              View original post ↗
-            </a>
-          )}
-        </aside>
+            {post.postUrl && (
+              <footer className="stp-view-card__side-foot">
+                <a className="stp-view-card__link" href={post.postUrl} target="_blank" rel="noopener noreferrer">
+                  View original post ↗
+                </a>
+              </footer>
+            )}
+          </aside>
+        </article>
       </div>
+
       <footer className="stp-foot">
         <span className="stp-foot-spacer" />
         <button className="stp-primary" onClick={onNext}>♥ Say thanks →</button>
