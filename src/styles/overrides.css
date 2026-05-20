@@ -2,7 +2,32 @@
    caused by stripping Svelte scoped suffixes. */
 
 *, *::before, *::after { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; }
+/* Production sets html/body to height: 100% which prevents scrolling when our
+   React tree (e.g. the wrap-up tab) exceeds the viewport. Allow scrolling. */
+html, body, #root { min-height: 100%; height: auto; margin: 0; }
+
+/* The captured Svelte chrome (.brand-dashboard > .dashboard-body) is locked to
+   100vh with overflow: hidden — clips the wrap-up tab. Relax it whenever
+   our React wrap-up panel is rendered inside, and pin the sidebar so it
+   stays visible while the wrap-up content scrolls. */
+.brand-dashboard:has(.wu),
+.brand-dashboard:has(.wu) .dashboard-body {
+  height: auto !important;
+  overflow: visible !important;
+  min-height: 100%;
+}
+.brand-dashboard:has(.wu) aside.sidebar {
+  position: sticky !important;
+  top: 0 !important;
+  align-self: start !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow-y: auto !important;
+}
+.brand-dashboard:has(.wu) aside.sidebar .sidebar-shell {
+  height: 100vh !important;
+  max-height: 100vh !important;
+}
 body {
   font-family: -apple-system, "system-ui", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   background: #fff;
